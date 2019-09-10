@@ -1,0 +1,14 @@
+# This is the Azure CI Pipeline for the RDMnetBroker repository that includes
+# jobs for building and testing on various platforms, as well as
+# deploying installers to BinTray.
+
+trigger:
+  branches:
+    include:
+    - develop
+    - master
+    - release/*
+    - refs/tags/v*.*.*.*
+
+pr:
+- develop
