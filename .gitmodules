@@ -1,0 +1,3 @@
+[submodule "external/RDMnet"]
+	path = external/RDMnet
+	url = https://github.com/ETCLabs/RDMnet
