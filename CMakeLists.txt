@@ -18,6 +18,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/cmake)
 
+add_subdirectory(external/RDMnet)
+
 ################################### Main app ##################################
 
 add_subdirectory(src)
