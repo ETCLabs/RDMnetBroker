@@ -55,7 +55,7 @@ stages:
           testResultsFiles: '**/Test.xml'
           failTaskOnFailedTests: true
   - job: macos_build_and_test
-    displayName: 'macOS Build and Test'
+    displayName: 'macOS'
     pool:
       vmImage: 'macos-10.14'
     steps:

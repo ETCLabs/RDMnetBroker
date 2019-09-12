@@ -34,6 +34,7 @@ add_subdirectory(src)
 
 #################################### Tests ####################################
 
+set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1) # Hack to prevent CTest added targets
 include(CTest)
 enable_testing()
 add_subdirectory(tests)
