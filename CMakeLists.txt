@@ -17,10 +17,11 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/cmake)
+set(BROKER_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
 # Add our RDMnet source dependency
-add_subdirectory(external/RDMnet)
-set_target_properties(RDMnet PROPERTIES FOLDER dependencies)
+include(BrokerAddDependency)
+broker_add_dependency(RDMnet RDMNET_DIR)
 set_target_properties(Broker PROPERTIES FOLDER dependencies)
 
 # Add the JSON 3rd-party library
@@ -33,5 +34,6 @@ add_subdirectory(src)
 
 #################################### Tests ####################################
 
+include(CTest)
 enable_testing()
 add_subdirectory(tests)
