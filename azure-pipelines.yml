@@ -12,3 +12,67 @@ trigger:
 
 pr:
 - develop
+
+stages:
+- stage: build_and_test
+  displayName: 'Build and Test RDMnet Broker'
+  jobs:
+  # Build and test RDMnetBroker on Windows using CMake and Visual Studio 2017.
+  - job: windows_build_and_test
+    displayName: 'Windows'
+    pool:
+      vmImage: 'vs2017-win2016'
+    strategy:
+      matrix:
+#        Win32:
+#          CMAKE_GENERATOR: 'Visual Studio 15 2017'
+#          ARTIFACT_TYPE: x86
+        x64:
+          CMAKE_GENERATOR: 'Visual Studio 15 2017 Win64'
+          ARTIFACT_TYPE: x64
+    steps:
+      - script: |
+          cd $(Build.SourcesDirectory)
+          mkdir build
+          cd build
+          cmake --version
+          cmake -G "%CMAKE_GENERATOR%" ..
+        displayName: 'Configure Project'
+      - task: VSBuild@1
+        displayName: 'Build Project'
+        inputs:
+          solution: $(Build.SourcesDirectory)\build\RDMnetBroker.sln
+          configuration: Release
+      - script: |
+          cd $(Build.SourcesDirectory)\build
+          ctest -C Release -T Test --output-on-failure
+        displayName: 'Run Tests'
+      - task: PublishTestResults@2
+        displayName: 'Publish Test Results'
+        inputs:
+          testResultsFormat: 'CTest'
+          testResultsFiles: '**/Test.xml'
+          failTaskOnFailedTests: true
+  - job: macos_build_and_test
+    displayName: 'macOS'
+    pool:
+      vmImage: 'macos-10.14'
+    steps:
+      - script: |
+          cd $(Build.SourcesDirectory)
+          mkdir build
+          cd build
+          cmake --version
+          cmake -G "Unix Makefiles" ..
+          make
+        displayName: 'Build Project'
+      - script: |
+          cd $(Build.SourcesDirectory)/build
+          ctest -T Test --output-on-failure
+        displayName: 'Run Tests'
+      - task: PublishTestResults@2
+        displayName: 'Publish Test Results'
+        inputs:
+          testResultsFormat: 'CTest'
+          testResultsFiles: '**/Test.xml'
+          failTaskOnFailedTests: true
