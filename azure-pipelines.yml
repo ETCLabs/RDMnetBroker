@@ -25,9 +25,9 @@ stages:
       vmImage: 'vs2017-win2016'
     strategy:
       matrix:
-        Win32:
-          CMAKE_GENERATOR: 'Visual Studio 15 2017'
-          ARTIFACT_TYPE: x86
+#        Win32:
+#          CMAKE_GENERATOR: 'Visual Studio 15 2017'
+#          ARTIFACT_TYPE: x86
         x64:
           CMAKE_GENERATOR: 'Visual Studio 15 2017 Win64'
           ARTIFACT_TYPE: x64
