@@ -22,15 +22,20 @@
 
 #include <string>
 #include <istream>
+#include "etcpal/uuid.h"
 #include "rdmnet/broker.h"
 #include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
+// A class to read the Broker's configuration file and translate it into the settings structure
+// taken by the RDMnet Broker library.
 class BrokerConfig
 {
 public:
-  BrokerConfig();
+  // We generate a CID ahead of time, because we want to use the same one for both the Broker's CID,
+  // and as a disambiguator in its DNS service instance name.
+  BrokerConfig() { etcpal_generate_os_preferred_uuid(&default_cid_); }
 
   enum class ParseResult
   {
@@ -42,14 +47,16 @@ public:
 
   ParseResult ReadFromFile(const std::string& file_name);
   ParseResult ReadFromStream(std::istream& stream);
-  rdmnet::BrokerSettings get() const { return settings_; }
+
+  rdmnet::BrokerSettings settings;
+
+  const EtcPalUuid& default_cid() const { return default_cid_; }
 
 private:
-  ParseResult Validate(const json& current_obj, const json& default_obj);
+  ParseResult ValidateCurrent();
 
-  json defaults_;
   json current_;
-  rdmnet::BrokerSettings settings_;
+  EtcPalUuid default_cid_;
 };
 
 #endif  // _BROKER_CONFIG_H_
