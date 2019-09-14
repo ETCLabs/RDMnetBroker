@@ -85,28 +85,35 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config)
   return false;
 }
 
-// Store a generic string from the "dns_sd": {} object.
-template <size_t TruncationSize>
-bool ValidateAndStoreDnsString(const json& val, std::string& string)
+// Store a generic string.
+bool ValidateAndStoreString(const json& val, std::string& string, size_t max_size, bool truncation_allowed = true)
 {
   std::string str_val = val;
   if (!str_val.empty())
   {
-    string = str_val.substr(0, TruncationSize - 1);
-    return true;
+    if (truncation_allowed)
+    {
+      string = str_val.substr(0, max_size);
+      return true;
+    }
+    else if (str_val.length() <= max_size)
+    {
+      string = str_val;
+      return true;
+    }
   }
   return false;
 }
 
 // Validate an arithmetic type and set it in the settings struct if it is within the valid range
 // for its type.
-template <class T>
-bool SetIfInRange(const json& val, T& setting)
+template <class IntType>
+bool ValidateAndStoreInt(const json& val, IntType& setting)
 {
   int64_t int_val = val;
-  if (int_val >= std::numeric_limits<T>::min() && int_val <= std::numeric_limits<T>::max())
+  if (int_val >= std::numeric_limits<IntType>::min() && int_val <= std::numeric_limits<IntType>::max())
   {
-    setting = static_cast<T>(int_val);
+    setting = static_cast<IntType>(int_val);
     return true;
   }
   return false;
@@ -151,7 +158,7 @@ static const std::vector<Validator> kSettingsValidatorArray = {
   {
     "/dns_sd/service_instance_name"_json_pointer,
     json::value_t::string,
-    [](const json& val, auto& config) { return ValidateAndStoreDnsString<E133_SERVICE_NAME_STRING_PADDED_LENGTH>(val, config.settings.disc_attributes.dns_service_instance_name); },
+    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.disc_attributes.dns_service_instance_name, E133_SERVICE_NAME_STRING_PADDED_LENGTH - 1); },
     [](auto& config)
     {
       char uuid_str_buf[ETCPAL_UUID_STRING_BYTES];
@@ -163,55 +170,55 @@ static const std::vector<Validator> kSettingsValidatorArray = {
   {
     "/dns_sd/manufacturer"_json_pointer,
     json::value_t::string,
-    [](const json& val, auto& config) { return ValidateAndStoreDnsString<E133_MANUFACTURER_STRING_PADDED_LENGTH>(val, config.settings.disc_attributes.dns_manufacturer); },
+    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.disc_attributes.dns_manufacturer, E133_MANUFACTURER_STRING_PADDED_LENGTH - 1); },
     [](auto& config) { config.settings.disc_attributes.dns_manufacturer = "ETC"; }
   },
   {
     "/dns_sd/model"_json_pointer,
     json::value_t::string,
-    [](const json& val, auto& config) { return ValidateAndStoreDnsString<E133_MODEL_STRING_PADDED_LENGTH>(val, config.settings.disc_attributes.dns_model); },
+    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.disc_attributes.dns_model, E133_MODEL_STRING_PADDED_LENGTH - 1); },
     [](auto& config) { config.settings.disc_attributes.dns_model = "RDMnet Broker Service"; }
   },
   {
     "/dns_sd/scope"_json_pointer,
     json::value_t::string,
-    [](const json& val, auto& config) { return ValidateAndStoreDnsString<E133_SCOPE_STRING_PADDED_LENGTH>(val, config.settings.disc_attributes.scope); },
+    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.disc_attributes.scope, E133_SCOPE_STRING_PADDED_LENGTH -1, false); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed scope value.
   },
   {
     "/max_connections"_json_pointer,
     json::value_t::number_unsigned,
-    [](const json& val, auto& config) { return SetIfInRange<unsigned int>(val, config.settings.max_connections); },
+    [](const json& val, auto& config) { return ValidateAndStoreInt<unsigned int>(val, config.settings.max_connections); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
   {
     "/max_controllers"_json_pointer,
     json::value_t::number_unsigned,
-    [](const json& val, auto& config) { return SetIfInRange<unsigned int>(val, config.settings.max_controllers); },
+    [](const json& val, auto& config) { return ValidateAndStoreInt<unsigned int>(val, config.settings.max_controllers); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
   {
     "/max_controller_messages"_json_pointer,
     json::value_t::number_unsigned,
-    [](const json& val, auto& config) { return SetIfInRange<unsigned int>(val, config.settings.max_controller_messages); },
+    [](const json& val, auto& config) { return ValidateAndStoreInt<unsigned int>(val, config.settings.max_controller_messages); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
   {
     "/max_devices"_json_pointer,
     json::value_t::number_unsigned,
-    [](const json& val, auto& config) { return SetIfInRange<unsigned int>(val, config.settings.max_devices); },
+    [](const json& val, auto& config) { return ValidateAndStoreInt<unsigned int>(val, config.settings.max_devices); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
   {
     "/max_device_messages"_json_pointer,
     json::value_t::number_unsigned,
-    [](const json& val, auto& config) { return SetIfInRange<unsigned int>(val, config.settings.max_device_messages); },
+    [](const json& val, auto& config) { return ValidateAndStoreInt<unsigned int>(val, config.settings.max_device_messages); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
   {
     "/max_reject_connections"_json_pointer,
     json::value_t::number_unsigned,
-    [](const json& val, auto& config) { return SetIfInRange<unsigned int>(val, config.settings.max_reject_connections); },
+    [](const json& val, auto& config) { return ValidateAndStoreInt<unsigned int>(val, config.settings.max_reject_connections); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   }
 };
