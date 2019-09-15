@@ -35,6 +35,75 @@ protected:
   BrokerConfig config_;
 };
 
+// Make sure a full, valid example config with example values for all current settings is parsed
+// correctly.
+TEST_F(TestBrokerConfig, full_valid_config_parsed_correctly)
+{
+  const std::string kCid = "4958ac8f-cd5e-42cd-ab7e-9797b0efd3ac";
+  const uint16_t kDynamicUidManu = 25972;
+
+  const std::string kDnsServiceInstanceName = "My ETC RDMnet Broker";
+  const std::string kDnsManufacturer = "ETC";
+  const std::string kDnsModel = "RDMnet Broker";
+  const std::string kScope = "default";
+
+  const unsigned int kMaxConnections = 20000;
+  const unsigned int kMaxControllers = 1000;
+  const unsigned int kMaxControllerMessages = 500;
+  const unsigned int kMaxDevices = 20000;
+  const unsigned int kMaxDeviceMessages = 500;
+  const unsigned int kMaxRejectConnections = 1000;
+
+  // clang-format off
+  const std::string kFullValidConfig = R"(
+    {
+      "cid": ")" + kCid + R"(",
+      "uid": {
+        "type": "dynamic",
+        "manufacturer_id": )" + std::to_string(kDynamicUidManu) + R"(
+      },
+
+      "dns_sd": {
+        "service_instance_name": ")" + kDnsServiceInstanceName + R"(",
+        "manufacturer": ")" + kDnsManufacturer + R"(",
+        "model": ")" + kDnsModel + R"(",
+        "scope": ")" + kScope + R"("
+      },
+
+      "max_connections": )" + std::to_string(kMaxConnections) + R"(,
+      "max_controllers": )" + std::to_string(kMaxControllers) + R"(,
+      "max_controller_messages": )" + std::to_string(kMaxControllerMessages) + R"(,
+      "max_devices": )" + std::to_string(kMaxDevices) + R"(,
+      "max_device_messages": )" + std::to_string(kMaxDeviceMessages) + R"(,
+      "max_reject_connections": )" + std::to_string(kMaxRejectConnections) + R"(
+    }
+  )";
+  // clang-format on
+
+  std::istringstream test_stream(kFullValidConfig);
+  EXPECT_EQ(config_.ReadFromStream(test_stream), BrokerConfig::ParseResult::kOk);
+
+  char cid_str_out[ETCPAL_UUID_STRING_BYTES];
+  etcpal_uuid_to_string(cid_str_out, &config_.settings.cid);
+  EXPECT_EQ(cid_str_out, kCid);
+
+  EXPECT_EQ(config_.settings.uid_type, rdmnet::BrokerSettings::kDynamicUid);
+  EXPECT_TRUE(RDMNET_UID_IS_DYNAMIC_UID_REQUEST(&config_.settings.uid));
+  EXPECT_EQ(RDM_GET_MANUFACTURER_ID(&config_.settings.uid), kDynamicUidManu);
+
+  EXPECT_EQ(config_.settings.disc_attributes.dns_service_instance_name, kDnsServiceInstanceName);
+  EXPECT_EQ(config_.settings.disc_attributes.dns_manufacturer, kDnsManufacturer);
+  EXPECT_EQ(config_.settings.disc_attributes.dns_model, kDnsModel);
+  EXPECT_EQ(config_.settings.disc_attributes.scope, kScope);
+
+  EXPECT_EQ(config_.settings.max_connections, kMaxConnections);
+  EXPECT_EQ(config_.settings.max_controllers, kMaxControllers);
+  EXPECT_EQ(config_.settings.max_controller_messages, kMaxControllerMessages);
+  EXPECT_EQ(config_.settings.max_devices, kMaxDevices);
+  EXPECT_EQ(config_.settings.max_device_messages, kMaxDeviceMessages);
+  EXPECT_EQ(config_.settings.max_reject_connections, kMaxRejectConnections);
+}
+
 TEST_F(TestBrokerConfig, invalid_json_should_fail_without_throwing)
 {
   // We're not trying to replicate the (very comprehensive!) testing of our 3rd-party JSON library,
@@ -260,8 +329,7 @@ void TestBrokerConfig::TestDnsSdValidStringValueHelper(
     const std::string& key, std::function<std::string(const rdmnet::BrokerSettings&)> value_getter)
 {
   const std::string kTestString = "Broker String Name From Unit Tests";
-  const std::string kValidConfig =
-      R"( { "dns_sd": { ")" + key + R"(": ")" + kTestString + R"(" } } )";
+  const std::string kValidConfig = R"( { "dns_sd": { ")" + key + R"(": ")" + kTestString + R"(" } } )";
 
   std::istringstream test_stream(kValidConfig);
   EXPECT_EQ(config_.ReadFromStream(test_stream), BrokerConfig::ParseResult::kOk);
@@ -303,6 +371,18 @@ TEST_F(TestBrokerConfig, valid_dns_sd_model_parsed_correctly)
 TEST_F(TestBrokerConfig, invalid_dns_sd_scope_should_fail)
 {
   TestDnsSdInvalidStringValueHelper("scope");
+
+  // Scope too long should fail
+  // 63 octets is the max length, this is prescribed by the standard and unlikely to change
+
+  // clang-format off
+  const std::string kScopeTooLong =
+  //                             |---------10--------20--------30--------40--------50--------60--------70
+      R"( { "dns_sd": { "scope": "01234567890123456789012345678901234567890123456789012345678901234567890" } } )";
+  // clang-format on
+
+  std::istringstream test_stream(kScopeTooLong);
+  EXPECT_EQ(config_.ReadFromStream(test_stream), BrokerConfig::ParseResult::kInvalidSetting);
 }
 
 TEST_F(TestBrokerConfig, valid_dns_sd_scope_parsed_correctly)
