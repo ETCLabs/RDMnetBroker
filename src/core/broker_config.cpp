@@ -225,17 +225,17 @@ static const std::vector<Validator> kSettingsValidatorArray = {
 // clang-format on
 
 // Read the JSON configuration from a file.
-BrokerConfig::ParseResult BrokerConfig::ReadFromFile(const std::string& file_name)
+BrokerConfig::ParseResult BrokerConfig::Read(const std::string& file_name)
 {
   std::ifstream file_stream(file_name);
   if (!file_stream.is_open())
     return ParseResult::kFileOpenErr;
 
-  return ReadFromStream(file_stream);
+  return Read(file_stream);
 }
 
 // Read the JSON configuration from an input stream.
-BrokerConfig::ParseResult BrokerConfig::ReadFromStream(std::istream& stream)
+BrokerConfig::ParseResult BrokerConfig::Read(std::istream& stream)
 {
   try
   {

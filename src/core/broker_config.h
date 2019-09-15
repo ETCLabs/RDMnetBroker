@@ -45,8 +45,8 @@ public:
     kOk
   };
 
-  ParseResult ReadFromFile(const std::string& file_name);
-  ParseResult ReadFromStream(std::istream& stream);
+  ParseResult Read(const std::string& file_name);
+  ParseResult Read(std::istream& stream);
 
   rdmnet::BrokerSettings settings;
 
