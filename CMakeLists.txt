@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(RDMnetBroker VERSION 0.1.0)
 
-if (MSVC)
+if(MSVC)
   add_compile_options(/W4)
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   add_compile_options(-Wall -Wconversion)
@@ -11,6 +11,10 @@ elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_CXX_COMPILER_ID}" 
   else()
     add_compile_options(-Wno-sign-compare)
   endif()
+endif()
+
+if(WIN32)
+  add_compile_definitions(NOMINMAX)
 endif()
 
 # Allow folder grouping in generated IDE projects

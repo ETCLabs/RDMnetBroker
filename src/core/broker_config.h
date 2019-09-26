@@ -45,12 +45,12 @@ public:
     kOk
   };
 
-  ParseResult Read(const std::string& file_name);
-  ParseResult Read(std::istream& stream);
+  [[nodiscard]] ParseResult Read(const std::string& file_name);
+  [[nodiscard]] ParseResult Read(std::istream& stream);
+
+  [[nodiscard]] const EtcPalUuid& default_cid() const { return default_cid_; }
 
   rdmnet::BrokerSettings settings;
-
-  const EtcPalUuid& default_cid() const { return default_cid_; }
 
 private:
   ParseResult ValidateCurrent();

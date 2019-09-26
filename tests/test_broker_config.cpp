@@ -17,7 +17,6 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#define NOMINMAX
 #include "broker_config.h"
 #include "gtest/gtest.h"
 

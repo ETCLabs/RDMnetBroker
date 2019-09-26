@@ -5,4 +5,4 @@ add_library(RDMnetBrokerCore
 )
 target_include_directories(RDMnetBrokerCore PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(RDMnetBrokerCore PUBLIC Broker nlohmann_json::nlohmann_json)
-set_target_properties(RDMnetBrokerCore PROPERTIES CXX_STANDARD 14)
+set_target_properties(RDMnetBrokerCore PROPERTIES CXX_STANDARD 17)

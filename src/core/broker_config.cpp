@@ -17,17 +17,17 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#define NOMINMAX
 #include "broker_config.h"
 
+#include <array>
 #include <functional>
 #include <fstream>
 #include <limits>
-#include <map>
+#include <type_traits>
 #include "etcpal/uuid.h"
 
 // A set of information needed to validate an element in the config file's JSON.
-struct Validator
+struct Validator final
 {
   // Pointer to the key
   const json::json_pointer pointer;
@@ -43,7 +43,7 @@ struct Validator
 // The CID must be a string representation of a UUID.
 bool ValidateAndStoreCid(const json& val, BrokerConfig& config)
 {
-  std::string str_val = val;
+  const std::string str_val = val;
   return etcpal_string_to_uuid(&config.settings.cid, str_val.c_str(), str_val.size());
 }
 
@@ -58,14 +58,14 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config)
   if (val.contains("type") && val["type"].is_string() && val.contains("manufacturer_id") &&
       val["manufacturer_id"].is_number_integer())
   {
-    std::string type = val["type"];
-    int64_t manufacturer_id = val["manufacturer_id"];
+    const std::string type = val["type"];
+    const int64_t manufacturer_id = val["manufacturer_id"];
 
     if (manufacturer_id > 0 && manufacturer_id < 0x8000)
     {
       if (type == "static" && val.contains("device_id") && val["device_id"].is_number_integer())
       {
-        int64_t device_id = val["device_id"];
+        const int64_t device_id = val["device_id"];
         if (device_id >= 0 && device_id <= 0xffffffff)
         {
           RdmUid static_uid;
@@ -88,7 +88,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config)
 // Store a generic string.
 bool ValidateAndStoreString(const json& val, std::string& string, size_t max_size, bool truncation_allowed = true)
 {
-  std::string str_val = val;
+  const std::string str_val = val;
   if (!str_val.empty())
   {
     if (truncation_allowed)
@@ -107,10 +107,12 @@ bool ValidateAndStoreString(const json& val, std::string& string, size_t max_siz
 
 // Validate an arithmetic type and set it in the settings struct if it is within the valid range
 // for its type.
-template <class IntType>
+template <typename IntType>
 bool ValidateAndStoreInt(const json& val, IntType& setting)
 {
-  int64_t int_val = val;
+  static_assert(std::is_integral<IntType>(), "This function can only be used with integral types.");
+
+  const int64_t int_val = val;
   if (int_val >= std::numeric_limits<IntType>::min() && int_val <= std::numeric_limits<IntType>::max())
   {
     setting = static_cast<IntType>(int_val);
@@ -142,7 +144,7 @@ bool ValidateAndStoreInt(const json& val, IntType& setting)
 //   "max_reject_connections": 1000
 // }
 // clang-format off
-static const std::vector<Validator> kSettingsValidatorArray = {
+static const Validator kSettingsValidatorArray[] = {
   {
     "/cid"_json_pointer,
     json::value_t::string,
@@ -253,45 +255,38 @@ BrokerConfig::ParseResult BrokerConfig::Read(std::istream& stream)
 // valid.
 BrokerConfig::ParseResult BrokerConfig::ValidateCurrent()
 {
-  for (auto setting : kSettingsValidatorArray)
+  for (const auto& setting : kSettingsValidatorArray)
   {
-    try
+    // Check each key that matches an item in our settings array.
+    if (current_.contains(setting.pointer))
     {
-      // Check each key that matches an item in our settings array.
-      if (current_.contains(setting.pointer))
-      {
-        json val = current_[setting.pointer];
+      const json val = current_[setting.pointer];
 
-        // If a setting is set to "null" in the JSON, store the default value.
-        if (val.is_null() && setting.store_default)
-        {
-          setting.store_default(*this);
-        }
-        else
-        {
-          if (val.type() != setting.type)
-          {
-            // The value type of this item does not match the type of the corresponding default setting.
-            return ParseResult::kInvalidSetting;
-          }
-
-          // Try to validate the setting's value.
-          if (!setting.validate_and_store(val, *this))
-          {
-            return ParseResult::kInvalidSetting;
-          }
-        }
-      }
-      else if (setting.store_default)
+      // If a setting is set to "null" in the JSON, store the default value.
+      if (val.is_null() && setting.store_default)
       {
-        // The "store_default" function may not be present, in which case the default-constructed
-        // value in the output settings is left as-is.
         setting.store_default(*this);
       }
+      else
+      {
+        if (val.type() != setting.type)
+        {
+          // The value type of this item does not match the type of the corresponding default setting.
+          return ParseResult::kInvalidSetting;
+        }
+
+        // Try to validate the setting's value.
+        if (!setting.validate_and_store(val, *this))
+        {
+          return ParseResult::kInvalidSetting;
+        }
+      }
     }
-    catch (json::parse_error)
+    else if (setting.store_default)
     {
-      return ParseResult::kInvalidSetting;
+      // The "store_default" function may not be present, in which case the default-constructed
+      // value in the output settings is left as-is.
+      setting.store_default(*this);
     }
   }
   return ParseResult::kOk;
