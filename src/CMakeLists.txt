@@ -2,7 +2,7 @@
 add_subdirectory(core)
 
 if(WIN32)
-  # add_subdirectory(windows)
+  add_subdirectory(windows)
 elseif(APPLE)
   # add_subdirectory(macos)
 elseif(UNIX)

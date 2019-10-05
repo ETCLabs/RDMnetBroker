@@ -28,7 +28,7 @@
 void BrokerShell::ScopeChanged(const std::string& new_scope)
 {
   if (log_)
-    log_->Log(ETCPAL_LOG_INFO, "Scope change detected, restarting broker and applying changes");
+    log_->Info("Scope change detected, restarting broker and applying changes");
 
   new_scope_ = new_scope;
   restart_requested_ = true;
@@ -37,7 +37,7 @@ void BrokerShell::ScopeChanged(const std::string& new_scope)
 void BrokerShell::NetworkChanged()
 {
   if (log_)
-    log_->Log(ETCPAL_LOG_INFO, "Network change detected, restarting broker and applying changes");
+    log_->Info("Network change detected, restarting broker and applying changes");
 
   restart_requested_ = true;
 }
@@ -45,7 +45,7 @@ void BrokerShell::NetworkChanged()
 void BrokerShell::AsyncShutdown()
 {
   if (log_)
-    log_->Log(ETCPAL_LOG_INFO, "Shutdown requested, Broker shutting down...");
+    log_->Info("Shutdown requested, Broker shutting down...");
 
   shutdown_requested_ = true;
 }
@@ -146,7 +146,7 @@ void BrokerShell::Run(rdmnet::BrokerLog* log, rdmnet::BrokerSocketManager* sock_
 
 void BrokerShell::PrintVersion()
 {
-  std::cout << "ETC Prototype RDMnet Broker\n";
+  std::cout << "ETC RDMnet Broker\n";
   std::cout << "Version " << RDMNET_VERSION_STRING << "\n\n";
   std::cout << RDMNET_VERSION_COPYRIGHT << "\n";
   std::cout << "License: Apache License v2.0 <http://www.apache.org/licenses/LICENSE-2.0>\n";
