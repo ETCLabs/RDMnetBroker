@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <cstdio>
+#include <winsock2.h>
 #include <windows.h>
 #include "service_utils.h"
 #include "broker_service.h"
@@ -61,7 +62,8 @@ int wmain(int argc, wchar_t* argv[])
   }
   else
   {
-    auto service = std::make_unique<BrokerService>(kServiceName);
+    auto broker_shell = std::make_unique<BrokerShell>();
+    auto service = std::make_unique<BrokerService>(kServiceName, broker_shell.get());
     if (service)
     {
       if (!BrokerService::Run(service.get()))

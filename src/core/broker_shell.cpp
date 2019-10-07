@@ -98,10 +98,9 @@ std::vector<EtcPalIpAddr> BrokerShell::ConvertMacsToInterfaces(const std::vector
   return to_return;
 }
 
-void BrokerShell::Run(rdmnet::BrokerLog* log, rdmnet::BrokerSocketManager* sock_mgr)
+void BrokerShell::Run(bool /*debug_mode*/)
 {
-  log_ = log;
-  log_->Startup(initial_data_.log_mask);
+  Startup(initial_data_.log_mask);
 
   rdmnet::BrokerSettings broker_settings(0x6574);
   broker_settings.disc_attributes.scope = initial_data_.scope;
@@ -114,7 +113,7 @@ void BrokerShell::Run(rdmnet::BrokerLog* log, rdmnet::BrokerSocketManager* sock_
   broker_settings.disc_attributes.dns_service_instance_name = "UNIQUE NAME";
   broker_settings.disc_attributes.dns_model = "E1.33 Broker Prototype";
 
-  rdmnet::Broker broker(log, sock_mgr, this);
+  rdmnet::Broker broker(this, this);
   broker.Startup(broker_settings, initial_data_.port, ifaces);
 
   // We want this to run forever if a console
@@ -142,15 +141,4 @@ void BrokerShell::Run(rdmnet::BrokerLog* log, rdmnet::BrokerSocketManager* sock_
 
   broker.Shutdown();
   log_->Shutdown();
-}
-
-void BrokerShell::PrintVersion()
-{
-  std::cout << "ETC RDMnet Broker\n";
-  std::cout << "Version " << RDMNET_VERSION_STRING << "\n\n";
-  std::cout << RDMNET_VERSION_COPYRIGHT << "\n";
-  std::cout << "License: Apache License v2.0 <http://www.apache.org/licenses/LICENSE-2.0>\n";
-  std::cout << "Unless required by applicable law or agreed to in writing, this software is\n";
-  std::cout << "provided \"AS IS\", WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express\n";
-  std::cout << "or implied.\n";
 }

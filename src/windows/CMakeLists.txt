@@ -7,3 +7,4 @@ add_executable(RDMnetBrokerService
   main.cpp
 )
 target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore)
+target_compile_definitions(RDMnetBrokerService PRIVATE UNICODE _UNICODE)

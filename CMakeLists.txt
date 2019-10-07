@@ -26,7 +26,7 @@ set(BROKER_ROOT ${CMAKE_CURRENT_LIST_DIR})
 # Add our RDMnet source dependency
 include(BrokerAddDependency)
 broker_add_dependency(RDMnet RDMNET_DIR)
-set_target_properties(Broker PROPERTIES FOLDER dependencies)
+set_target_properties(RDMnetBroker PROPERTIES FOLDER dependencies)
 
 # Add the JSON 3rd-party library
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/external/json)

@@ -21,7 +21,9 @@
 #define _BROKER_SERVICE_H_
 
 #include <string>
+#include <winsock2.h>
 #include <windows.h>
+#include "broker_shell.h"
 
 class BrokerService
 {
@@ -31,9 +33,7 @@ public:
   // method in the service. This method blocks until the service has stopped.
   static bool Run(BrokerService* service);
 
-  BrokerService(const wchar_t* service_name);
-
-  bool keep_running() { return service_thread_keep_running_; }
+  BrokerService(const wchar_t* service_name, BrokerShell* shell);
 
 private:
   void SetServiceStatus(DWORD current_state, DWORD exit_code = NO_ERROR, DWORD wait_hint = 0);
@@ -48,15 +48,17 @@ private:
   void Stop();
   void Shutdown();
 
-  static DWORD WINAPI ServiceRunThread(LPVOID* arg);
+  void RunBroker();
+
+  static DWORD WINAPI ServiceThread(LPVOID* arg);
 
   static BrokerService* service_;  // The singleton service instance.
+  BrokerShell* broker_shell_;
 
   std::wstring name_;                             // The name of the service
   SERVICE_STATUS status_{};                       // The status of the service
   SERVICE_STATUS_HANDLE status_handle_{nullptr};  // The service status handle
   HANDLE service_thread_{nullptr};
-  bool service_thread_keep_running_{true};
 };
 
 #endif  // _BROKER_SERVICE_H_

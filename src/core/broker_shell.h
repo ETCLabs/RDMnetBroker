@@ -36,7 +36,7 @@ class BrokerShell : public rdmnet::BrokerLog, public rdmnet::BrokerNotify
 public:
   typedef std::array<uint8_t, ETCPAL_NETINTINFO_MAC_LEN> MacAddress;
 
-  void Run(bool debug_mode);
+  void Run(bool debug_mode = false);
 
   // Options to set from the command line; must be set BEFORE Run() is called.
   void SetInitialScope(const std::string& scope) { initial_data_.scope = scope; }
@@ -49,12 +49,6 @@ public:
   void AsyncShutdown();
 
 private:
-  enum class ParseResult
-  {
-    kErr,
-    kPrintHelp,
-    kPrintVersion
-  };
   void ScopeChanged(const std::string& new_scope) override;
   void PrintWarningMessage();
 
