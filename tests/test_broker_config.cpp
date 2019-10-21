@@ -18,8 +18,11 @@
  *****************************************************************************/
 
 #include "broker_config.h"
-#include "gtest/gtest.h"
+
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
+#include "gtest/gtest.h"
 
 class TestBrokerConfig : public testing::Test
 {
@@ -48,8 +51,21 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 
   const std::string kScope = "default";
   const uint16_t kListenPort = 8888;
-  const std::set<rdmnet::BrokerSettings::MacAddress> kListenMacs = {{0x00, 0xc0, 0x16, 0x01, 0x23, 0x45}};
+  const std::set<rdmnet::BrokerSettings::MacAddress> kListenMacs = {{0x00, 0xc0, 0x16, 0x01, 0x23, 0x45},
+                                                                    {0x00, 0xc0, 0x16, 0x33, 0x33, 0x33}};
   const std::set<EtcPalIpAddr> kListenAddrs;
+
+  auto MacToString = [](const rdmnet::BrokerSettings::MacAddress& mac) {
+    auto ByteToString = [](uint8_t byte) {
+      std::stringstream stream;
+      stream << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(byte);
+      return stream.str();
+    };
+    return "\"" +
+           std::accumulate(std::next(mac.begin()), mac.end(), ByteToString(mac[0]),
+                           [&](std::string a, uint8_t b) { return std::move(a) + ':' + ByteToString(b); }) +
+           "\"";
+  };
 
   const unsigned int kMaxConnections = 20000;
   const unsigned int kMaxControllers = 1000;
@@ -75,6 +91,9 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 
       "scope": ")" + kScope + R"(",
       "listen_port": )" + std::to_string(kListenPort) + R"(,
+      "listen_macs": [ )" + std::accumulate(std::next(kListenMacs.begin()), kListenMacs.end(), MacToString(*kListenMacs.begin()), [MacToString](std::string a, auto b) {
+          return std::move(a) + ", " + MacToString(b);
+       }) + R"( ],
 
       "max_connections": )" + std::to_string(kMaxConnections) + R"(,
       "max_controllers": )" + std::to_string(kMaxControllers) + R"(,
@@ -86,6 +105,7 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
   )";
   // clang-format on
 
+  std::cout << kFullValidConfig;
   std::istringstream test_stream(kFullValidConfig);
   ASSERT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
 
