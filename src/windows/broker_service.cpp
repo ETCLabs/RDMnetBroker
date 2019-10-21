@@ -25,16 +25,11 @@ BrokerService* BrokerService::service_{nullptr};
 
 DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 {
-  service_->RunBroker();
+  service_->Run();
   return 0;
 }
 
-void BrokerService::RunBroker()
-{
-  broker_shell_->Run();
-}
-
-bool BrokerService::Run(BrokerService* service)
+bool BrokerService::RunService(BrokerService* service)
 {
   service_ = service;
 
@@ -91,8 +86,7 @@ void WINAPI BrokerService::ServiceCtrlHandler(DWORD control_code)
   }
 }
 
-BrokerService::BrokerService(const wchar_t* service_name, BrokerShell* shell)
-    : broker_shell_(shell), name_(service_name)
+BrokerService::BrokerService(const wchar_t* service_name) : name_(service_name)
 {
   status_.dwServiceType = SERVICE_WIN32_OWN_PROCESS;  // The service runs in its own process.
   status_.dwCurrentState = SERVICE_START_PENDING;     // The service is starting.
@@ -145,7 +139,7 @@ void BrokerService::Stop()
     SetServiceStatus(SERVICE_STOP_PENDING);
 
     // Perform service-specific stop operations.
-    broker_shell_->AsyncShutdown();
+    broker_shell_.AsyncShutdown();
     WaitForSingleObject(service_thread_, INFINITE);
 
     // Tell SCM that the service is stopped.
@@ -174,7 +168,7 @@ void BrokerService::Shutdown()
   try
   {
     // Perform service-specific stop operations.
-    broker_shell_->AsyncShutdown();
+    broker_shell_.AsyncShutdown();
     WaitForSingleObject(service_thread_, INFINITE);
 
     // Tell SCM that the service is stopped.

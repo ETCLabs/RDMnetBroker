@@ -24,6 +24,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #include "broker_shell.h"
+#include "win_broker_log.h"
 
 class BrokerService
 {
@@ -31,9 +32,11 @@ public:
   // Register the executable for a service with the Service Control Manager (SCM). After you call
   // Run(BrokerService*), the SCM issues a Start command, which results in a call to the OnStart
   // method in the service. This method blocks until the service has stopped.
-  static bool Run(BrokerService* service);
+  static bool RunService(BrokerService* service);
+  void Run() { broker_shell_.Run(&log_); }
+  void Debug() { broker_shell_.Run(&log_, true); }
 
-  BrokerService(const wchar_t* service_name, BrokerShell* shell);
+  BrokerService(const wchar_t* service_name);
 
 private:
   void SetServiceStatus(DWORD current_state, DWORD exit_code = NO_ERROR, DWORD wait_hint = 0);
@@ -48,12 +51,11 @@ private:
   void Stop();
   void Shutdown();
 
-  void RunBroker();
-
   static DWORD WINAPI ServiceThread(LPVOID* arg);
 
   static BrokerService* service_;  // The singleton service instance.
-  BrokerShell* broker_shell_;
+  BrokerShell broker_shell_;
+  WindowsBrokerLog log_;
 
   std::wstring name_;                             // The name of the service
   SERVICE_STATUS status_{};                       // The status of the service

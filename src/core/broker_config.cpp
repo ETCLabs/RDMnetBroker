@@ -24,6 +24,7 @@
 #include <fstream>
 #include <limits>
 #include <type_traits>
+#include <utility>
 #include "etcpal/uuid.h"
 
 // A set of information needed to validate an element in the config file's JSON.
@@ -43,8 +44,8 @@ struct Validator final
 // The CID must be a string representation of a UUID.
 bool ValidateAndStoreCid(const json& val, BrokerConfig& config)
 {
-  const std::string str_val = val;
-  return etcpal_string_to_uuid(&config.settings.cid, str_val.c_str(), str_val.size());
+  config.settings.cid = etcpal::Uuid::FromString(val);
+  return !config.settings.cid.IsNull();
 }
 
 // The UID takes the form:
@@ -108,12 +109,14 @@ bool ValidateAndStoreString(const json& val, std::string& string, size_t max_siz
 // Validate an arithmetic type and set it in the settings struct if it is within the valid range
 // for its type.
 template <typename IntType>
-bool ValidateAndStoreInt(const json& val, IntType& setting)
+bool ValidateAndStoreInt(const json& val, IntType& setting,
+                         const std::pair<IntType, IntType>& limits = std::make_pair<IntType, IntType>(
+                             std::numeric_limits<IntType>::min(), std::numeric_limits<IntType>::max()))
 {
   static_assert(std::is_integral<IntType>(), "This function can only be used with integral types.");
 
   const int64_t int_val = val;
-  if (int_val >= std::numeric_limits<IntType>::min() && int_val <= std::numeric_limits<IntType>::max())
+  if (int_val >= limits.first && int_val <= limits.second)
   {
     setting = static_cast<IntType>(int_val);
     return true;
@@ -133,8 +136,17 @@ bool ValidateAndStoreInt(const json& val, IntType& setting)
 //     "service_instance_name": "My ETC RDMnet Broker",
 //     "manufacturer": "ETC",
 //     "model": "RDMnet Broker",
-//     "scope": "default"
 //   },
+//
+//   "scope": "default",
+//   "listen_port": 8888,
+//   "listen_macs": [
+//     "00:c0:16:12:34:56"
+//   ],
+//   "listen_addrs": [
+//     "10.101.13.37",
+//     "2001:db8::1234:5678"
+//   ]
 //
 //   "max_connections": 20000,
 //   "max_controllers": 1000,
@@ -160,33 +172,49 @@ static const Validator kSettingsValidatorArray[] = {
   {
     "/dns_sd/service_instance_name"_json_pointer,
     json::value_t::string,
-    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.disc_attributes.dns_service_instance_name, E133_SERVICE_NAME_STRING_PADDED_LENGTH - 1); },
+    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.dns.service_instance_name, E133_SERVICE_NAME_STRING_PADDED_LENGTH - 1); },
     [](auto& config)
     {
-      char uuid_str_buf[ETCPAL_UUID_STRING_BYTES];
-      etcpal_uuid_to_string(uuid_str_buf, &config.default_cid());
       // Add our CID to the service instance name, to help disambiguate
-      config.settings.disc_attributes.dns_service_instance_name = std::string("ETC RDMnet Broker ") + uuid_str_buf;
+      config.settings.dns.service_instance_name = "ETC RDMnet Broker " + config.default_cid().ToString();
     }
   },
   {
     "/dns_sd/manufacturer"_json_pointer,
     json::value_t::string,
-    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.disc_attributes.dns_manufacturer, E133_MANUFACTURER_STRING_PADDED_LENGTH - 1); },
-    [](auto& config) { config.settings.disc_attributes.dns_manufacturer = "ETC"; }
+    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.dns.manufacturer, E133_MANUFACTURER_STRING_PADDED_LENGTH - 1); },
+    [](auto& config) { config.settings.dns.manufacturer = "ETC"; }
   },
   {
     "/dns_sd/model"_json_pointer,
     json::value_t::string,
-    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.disc_attributes.dns_model, E133_MODEL_STRING_PADDED_LENGTH - 1); },
-    [](auto& config) { config.settings.disc_attributes.dns_model = "RDMnet Broker Service"; }
+    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.dns.model, E133_MODEL_STRING_PADDED_LENGTH - 1); },
+    [](auto& config) { config.settings.dns.model = "RDMnet Broker Service"; }
   },
   {
-    "/dns_sd/scope"_json_pointer,
+    "/scope"_json_pointer,
     json::value_t::string,
-    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.disc_attributes.scope, E133_SCOPE_STRING_PADDED_LENGTH -1, false); },
+    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.scope, E133_SCOPE_STRING_PADDED_LENGTH -1, false); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed scope value.
   },
+  {
+    "/listen_port"_json_pointer,
+    json::value_t::number_unsigned,
+    [](const json& val, auto& config) { return ValidateAndStoreInt<uint16_t>(val, config.settings.listen_port, std::make_pair<uint16_t, uint16_t>(1024, 65535)); },
+    std::function<void(BrokerConfig&)>() // Leave the default constructed port value.
+  },
+//  {
+//    "/listen_macs"_json_pointer,
+//    json::value_t::string,
+//    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.scope, E133_SCOPE_STRING_PADDED_LENGTH -1, false); },
+//    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_addrs value.
+//  },
+//  {
+//    "/listen_addrs"_json_pointer,
+//    json::value_t::string,
+//    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.scope, E133_SCOPE_STRING_PADDED_LENGTH -1, false); },
+//    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_addrs value.
+//  },
   {
     "/max_connections"_json_pointer,
     json::value_t::number_unsigned,

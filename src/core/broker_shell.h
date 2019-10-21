@@ -27,45 +27,31 @@
 #include "etcpal/inet.h"
 #include "etcpal/log.h"
 #include "rdmnet/broker.h"
+#include "broker_config.h"
 
 // BrokerShell : Platform-neutral wrapper around the Broker library from a generic console
 // application. Instantiates and drives the Broker library.
 
-class BrokerShell : public rdmnet::BrokerLog, public rdmnet::BrokerNotify
+class BrokerShell : public rdmnet::BrokerNotify
 {
 public:
-  typedef std::array<uint8_t, ETCPAL_NETINTINFO_MAC_LEN> MacAddress;
-
-  void Run(bool debug_mode = false);
-
-  // Options to set from the command line; must be set BEFORE Run() is called.
-  void SetInitialScope(const std::string& scope) { initial_data_.scope = scope; }
-  void SetInitialIfaceList(const std::vector<EtcPalIpAddr>& ifaces) { initial_data_.ifaces = ifaces; }
-  void SetInitialMacList(const std::vector<MacAddress>& macs) { initial_data_.macs = macs; }
-  void SetInitialPort(uint16_t port) { initial_data_.port = port; }
-  void SetInitialLogLevel(int level) { initial_data_.log_mask = ETCPAL_LOG_UPTO(level); }
+  void Run(rdmnet::BrokerLog* log, bool debug_mode = false);
 
   void NetworkChanged();
   void AsyncShutdown();
 
 private:
-  void ScopeChanged(const std::string& new_scope) override;
+  void HandleScopeChanged(const std::string& new_scope) override;
   void PrintWarningMessage();
 
-  std::vector<EtcPalIpAddr> GetInterfacesToListen();
-  std::vector<EtcPalIpAddr> ConvertMacsToInterfaces(const std::vector<MacAddress>& macs);
-  void ApplySettingsChanges(rdmnet::BrokerSettings& settings, std::vector<EtcPalIpAddr>& new_addrs);
+  void ApplySettingsChanges(rdmnet::BrokerSettings& settings);
 
-  struct InitialData
-  {
-    std::string scope{E133_DEFAULT_SCOPE};
-    std::vector<EtcPalIpAddr> ifaces;
-    std::vector<MacAddress> macs;
-    uint16_t port{0};
-    int log_mask{ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO)};
-  } initial_data_;
+  rdmnet::Broker broker_;
 
+  BrokerConfig broker_config_;
   rdmnet::BrokerLog* log_{nullptr};
+
+  // Handle changes at runtime
   std::atomic<bool> restart_requested_{false};
   bool shutdown_requested_{false};
   std::string new_scope_;

@@ -44,15 +44,23 @@ void PrintUsage(const wchar_t* app_name)
 
 int wmain(int argc, wchar_t* argv[])
 {
+  bool debug_mode = false;
+
   if (argc > 1)
   {
     if (_wcsicmp(L"-install", argv[1]) == 0)
     {
       InstallService(kServiceName, kServiceDisplayName, kServiceStartType, kServiceDependencies);
+      return 0;
     }
     else if (_wcsicmp(L"-remove", argv[1]) == 0)
     {
       UninstallService(kServiceName);
+      return 0;
+    }
+    else if (_wcsicmp(L"-debug", argv[1]) == 0)
+    {
+      debug_mode = true;
     }
     else
     {
@@ -60,23 +68,30 @@ int wmain(int argc, wchar_t* argv[])
       return 1;
     }
   }
-  else
+
+  // Got to here without returning - we will either run or debug.
+  auto service = std::make_unique<BrokerService>(kServiceName);
+  if (service)
   {
-    auto broker_shell = std::make_unique<BrokerShell>();
-    auto service = std::make_unique<BrokerService>(kServiceName, broker_shell.get());
-    if (service)
+    if (debug_mode)
     {
-      if (!BrokerService::Run(service.get()))
+      service->Debug();
+    }
+    else
+    {
+      if (!BrokerService::RunService(service.get()))
       {
         wchar_t error_msg[256];
         GetLastErrorMessage(error_msg, 256);
         wprintf(L"Service failed to run with error: '%s'\n", error_msg);
+        return 1;
       }
     }
-    else
-    {
-      wprintf(L"Error: Couldn't instantiate Broker service.\n");
-    }
+  }
+  else
+  {
+    wprintf(L"Error: Couldn't instantiate Broker service.\n");
+    return 1;
   }
 
   return 0;

@@ -16,45 +16,11 @@
  * This file is a part of RDMnetBroker. For more information, go to:
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
+#include "rdmnet/broker/log.h"
 
-#ifndef _BROKER_CONFIG_H_
-#define _BROKER_CONFIG_H_
-
-#include <istream>
-#include <string>
-#include "etcpal/netint.h"
-#include "etcpal/inet.h"
-#include "etcpal/cpp/uuid.h"
-#include "rdmnet/broker.h"
-#include "nlohmann/json.hpp"
-
-using json = nlohmann::json;
-
-// A class to read the Broker's configuration file and translate it into the settings structure
-// taken by the RDMnet Broker library.
-class BrokerConfig
+class WindowsBrokerLog : public rdmnet::BrokerLog
 {
 public:
-  enum class ParseResult
-  {
-    kFileOpenErr,
-    kJsonParseErr,
-    kInvalidSetting,
-    kOk
-  };
-
-  [[nodiscard]] ParseResult Read(const std::string& file_name);
-  [[nodiscard]] ParseResult Read(std::istream& stream);
-
-  [[nodiscard]] const etcpal::Uuid& default_cid() const { return default_cid_; }
-
-  rdmnet::BrokerSettings settings;
-
-private:
-  ParseResult ValidateCurrent();
-
-  json current_;
-  etcpal::Uuid default_cid_{etcpal::Uuid::OsPreferred()};
+  void GetTimeFromCallback(EtcPalLogTimeParams& time) override;
+  void OutputLogMsg(const std::string& str) override;
 };
-
-#endif  // _BROKER_CONFIG_H_
