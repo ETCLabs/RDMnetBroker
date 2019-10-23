@@ -19,7 +19,6 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <windows.h>
 #include "service_utils.h"
 
 /// \brief Get the last system error code as a descriptive string.

@@ -16,11 +16,29 @@
  * This file is a part of RDMnetBroker. For more information, go to:
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
+
+#ifndef WIN_BROKER_LOG_H_
+#define WIN_BROKER_LOG_H_
+
 #include "rdmnet/broker/log.h"
+
+#include <cstdio>
+#include <fstream>
+#include <winsock2.h>
+#include <windows.h>
 
 class WindowsBrokerLog : public rdmnet::BrokerLog
 {
-public:
+private:
+  FILE* log_file_{nullptr};
+
+  bool OnStartup() override;
+  void OnShutdown() override;
   void GetTimeFromCallback(EtcPalLogTimeParams& time) override;
   void OutputLogMsg(const std::string& str) override;
+
+  std::wstring GetOrCreateLogFilePath();
+  void RotateLogs(const std::wstring& log_file_path);
 };
+
+#endif  // WIN_BROKER_LOG_H_

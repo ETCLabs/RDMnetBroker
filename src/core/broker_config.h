@@ -17,8 +17,8 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#ifndef _BROKER_CONFIG_H_
-#define _BROKER_CONFIG_H_
+#ifndef BROKER_CONFIG_H_
+#define BROKER_CONFIG_H_
 
 #include <istream>
 #include <string>
@@ -43,18 +43,19 @@ public:
     kOk
   };
 
-  [[nodiscard]] ParseResult Read(const std::string& file_name);
-  [[nodiscard]] ParseResult Read(std::istream& stream);
+  //[[nodiscard]] ParseResult Read(const std::string& file_name, rdmnet::BrokerLog* log = nullptr);
+  [[nodiscard]] ParseResult Read(std::istream& stream, rdmnet::BrokerLog* log = nullptr);
+  void SetDefaults();
 
   [[nodiscard]] const etcpal::Uuid& default_cid() const { return default_cid_; }
 
   rdmnet::BrokerSettings settings;
 
 private:
-  ParseResult ValidateCurrent();
+  ParseResult ValidateCurrent(rdmnet::BrokerLog* log);
 
   json current_;
   etcpal::Uuid default_cid_{etcpal::Uuid::OsPreferred()};
 };
 
-#endif  // _BROKER_CONFIG_H_
+#endif  // BROKER_CONFIG_H_

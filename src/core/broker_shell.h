@@ -17,8 +17,8 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#ifndef _BROKER_SHELL_H_
-#define _BROKER_SHELL_H_
+#ifndef BROKER_SHELL_H_
+#define BROKER_SHELL_H_
 
 #include <string>
 #include <vector>
@@ -35,26 +35,29 @@
 class BrokerShell : public rdmnet::BrokerNotify
 {
 public:
-  void Run(rdmnet::BrokerLog* log, bool debug_mode = false);
+  bool Run(rdmnet::BrokerLog& log, bool debug_mode = false);
 
   void NetworkChanged();
   void AsyncShutdown();
 
-private:
-  void HandleScopeChanged(const std::string& new_scope) override;
-  void PrintWarningMessage();
-
-  void ApplySettingsChanges(rdmnet::BrokerSettings& settings);
-
-  rdmnet::Broker broker_;
-
+protected:
   BrokerConfig broker_config_;
+
+  virtual bool LoadBrokerConfig(rdmnet::BrokerLog& log) = 0;
+
+private:
+  rdmnet::Broker broker_;
   rdmnet::BrokerLog* log_{nullptr};
 
   // Handle changes at runtime
   std::atomic<bool> restart_requested_{false};
   bool shutdown_requested_{false};
   std::string new_scope_;
+
+  void HandleScopeChanged(const std::string& new_scope) override;
+  void PrintWarningMessage();
+
+  void ApplySettingsChanges(rdmnet::BrokerSettings& settings);
 };
 
-#endif  // _BROKER_SHELL_H_
+#endif  // BROKER_SHELL_H_

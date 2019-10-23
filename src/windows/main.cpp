@@ -33,7 +33,7 @@ constexpr wchar_t kServiceDependencies[] = L"";                  // List of serv
 
 void PrintUsage(const wchar_t* app_name)
 {
-  wprintf(L"Usage: %s [OPTIONAL ACTION]\n", app_name);
+  wprintf(L"Usage: %s [OPTIONAL_ACTION]\n", app_name);
   wprintf(L"Note: Only the Windows Service Control Manager should invoke this executable with no options.\n");
   wprintf(L"\n");
   wprintf(L"Optional actions (only one may be specified at a time):\n");
@@ -75,7 +75,7 @@ int wmain(int argc, wchar_t* argv[])
   {
     if (debug_mode)
     {
-      service->Debug();
+      return service->Debug();
     }
     else
     {

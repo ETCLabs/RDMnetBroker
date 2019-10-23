@@ -59,21 +59,24 @@ void BrokerShell::ApplySettingsChanges(rdmnet::BrokerSettings& settings)
   }
 }
 
-void BrokerShell::Run(rdmnet::BrokerLog* log, bool /*debug_mode*/)
+bool BrokerShell::Run(rdmnet::BrokerLog& log, bool /*debug_mode*/)
 {
-  log_ = log;
-  if (log_)
-    log_->Startup(ETCPAL_LOG_DEBUG);
+  log_ = &log;
+  if (!log_->Startup(ETCPAL_LOG_UPTO(ETCPAL_LOG_DEBUG)))
+    return false;
 
-  rdmnet::BrokerSettings broker_settings;
+  if (!LoadBrokerConfig(log))
+  {
+    log_->Shutdown();
+    return false;
+  }
 
-  broker_settings.dns.manufacturer = "ETC";
-  broker_settings.dns.service_instance_name = "UNIQUE NAME";
-  broker_settings.dns.model = "E1.33 Broker Prototype";
+  if (!broker_.Startup(broker_config_.settings, this, log_))
+  {
+    log_->Shutdown();
+    return false;
+  }
 
-  broker_.Startup(broker_settings, this, log_);
-
-  // We want this to run forever if a console
   while (true)
   {
     broker_.Tick();
@@ -86,7 +89,7 @@ void BrokerShell::Run(rdmnet::BrokerLog* log, bool /*debug_mode*/)
     {
       restart_requested_ = false;
 
-      broker_settings = broker_.GetSettings();
+      auto broker_settings = broker_.GetSettings();
       broker_.Shutdown();
 
       ApplySettingsChanges(broker_settings);
@@ -97,6 +100,6 @@ void BrokerShell::Run(rdmnet::BrokerLog* log, bool /*debug_mode*/)
   }
 
   broker_.Shutdown();
-  if (log_)
-    log_->Shutdown();
+  log_->Shutdown();
+  return true;
 }

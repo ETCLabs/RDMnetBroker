@@ -17,13 +17,13 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#ifndef _BROKER_SERVICE_H_
-#define _BROKER_SERVICE_H_
+#ifndef BROKER_SERVICE_H_
+#define BROKER_SERVICE_H_
 
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
-#include "broker_shell.h"
+#include "win_broker_shell.h"
 #include "win_broker_log.h"
 
 class BrokerService
@@ -33,8 +33,8 @@ public:
   // Run(BrokerService*), the SCM issues a Start command, which results in a call to the OnStart
   // method in the service. This method blocks until the service has stopped.
   static bool RunService(BrokerService* service);
-  void Run() { broker_shell_.Run(&log_); }
-  void Debug() { broker_shell_.Run(&log_, true); }
+  void Run() { broker_shell_.Run(log_); }
+  int Debug() { return (broker_shell_.Run(log_, true) ? 0 : 1); }
 
   BrokerService(const wchar_t* service_name);
 
@@ -54,7 +54,7 @@ private:
   static DWORD WINAPI ServiceThread(LPVOID* arg);
 
   static BrokerService* service_;  // The singleton service instance.
-  BrokerShell broker_shell_;
+  WindowsBrokerShell broker_shell_;
   WindowsBrokerLog log_;
 
   std::wstring name_;                             // The name of the service
@@ -63,4 +63,4 @@ private:
   HANDLE service_thread_{nullptr};
 };
 
-#endif  // _BROKER_SERVICE_H_
+#endif  // BROKER_SERVICE_H_

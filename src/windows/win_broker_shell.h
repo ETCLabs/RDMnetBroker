@@ -17,19 +17,15 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-/// \file windows/service_utils.h
-/// \brief Windows NT Service utility functions
+#ifndef WIN_BROKER_SHELL_H_
+#define WIN_BROKER_SHELL_H_
 
-#ifndef SERVICE_UTILS_H_
-#define SERVICE_UTILS_H_
+#include "broker_shell.h"
 
-#include <winsock2.h>
-#include <windows.h>
+class WindowsBrokerShell : public BrokerShell
+{
+private:
+  bool LoadBrokerConfig(rdmnet::BrokerLog& log) override;
+};
 
-void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size);
-
-void InstallService(const wchar_t* service_name, const wchar_t* display_name, DWORD start_type,
-                    const wchar_t* dependencies);
-void UninstallService(const wchar_t* service_name);
-
-#endif  // SERVICE_UTILS_H_
+#endif  // WIN_BROKER_SHELL_H_
