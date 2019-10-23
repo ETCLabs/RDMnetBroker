@@ -124,7 +124,49 @@ bool ValidateAndStoreInt(const json& val, IntType& setting,
   return false;
 }
 
-// A typical configuration file looks something like:
+bool ValidateAndStoreMacList(const json& val, BrokerConfig& config)
+{
+  const std::vector<json> mac_list = val;
+  for (const json& json_mac : mac_list)
+  {
+    if (json_mac.type() != json::value_t::string)
+    {
+      config.settings.listen_macs.clear();
+      return false;
+    }
+    etcpal::MacAddr mac = etcpal::MacAddr::FromString(json_mac);
+    if (mac.IsNull())
+    {
+      config.settings.listen_macs.clear();
+      return false;
+    }
+    config.settings.listen_macs.insert(mac);
+  }
+  return true;
+}
+
+bool ValidateAndStoreIpList(const json& val, BrokerConfig& config)
+{
+  const std::vector<json> ip_list = val;
+  for (const json& json_ip : ip_list)
+  {
+    if (json_ip.type() != json::value_t::string)
+    {
+      config.settings.listen_addrs.clear();
+      return false;
+    }
+    etcpal::IpAddr ip = etcpal::IpAddr::FromString(json_ip);
+    if (!ip.IsValid())
+    {
+      config.settings.listen_addrs.clear();
+      return false;
+    }
+    config.settings.listen_addrs.insert(ip);
+  }
+  return true;
+}
+
+// A typical full, valid configuration file looks something like:
 // {
 //   "cid": "4958ac8f-cd5e-42cd-ab7e-9797b0efd3ac",
 //   "uid": {
@@ -146,7 +188,7 @@ bool ValidateAndStoreInt(const json& val, IntType& setting,
 //   "listen_addrs": [
 //     "10.101.13.37",
 //     "2001:db8::1234:5678"
-//   ]
+//   ],
 //
 //   "max_connections": 20000,
 //   "max_controllers": 1000,
@@ -155,6 +197,8 @@ bool ValidateAndStoreInt(const json& val, IntType& setting,
 //   "max_device_messages": 500,
 //   "max_reject_connections": 1000
 // }
+// Any or all of these items can be omitted to use the default value for that key.
+
 // clang-format off
 static const Validator kSettingsValidatorArray[] = {
   {
@@ -203,18 +247,18 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config) { return ValidateAndStoreInt<uint16_t>(val, config.settings.listen_port, std::make_pair<uint16_t, uint16_t>(1024, 65535)); },
     std::function<void(BrokerConfig&)>() // Leave the default constructed port value.
   },
-//  {
-//    "/listen_macs"_json_pointer,
-//    json::value_t::string,
-//    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.scope, E133_SCOPE_STRING_PADDED_LENGTH -1, false); },
-//    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_addrs value.
-//  },
-//  {
-//    "/listen_addrs"_json_pointer,
-//    json::value_t::string,
-//    [](const json& val, auto& config) { return ValidateAndStoreString(val, config.settings.scope, E133_SCOPE_STRING_PADDED_LENGTH -1, false); },
-//    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_addrs value.
-//  },
+  {
+    "/listen_macs"_json_pointer,
+    json::value_t::array,
+    ValidateAndStoreMacList,
+    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_macs value.
+  },
+  {
+    "/listen_addrs"_json_pointer,
+    json::value_t::array,
+    ValidateAndStoreIpList,
+    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_addrs value.
+  },
   {
     "/max_connections"_json_pointer,
     json::value_t::number_unsigned,

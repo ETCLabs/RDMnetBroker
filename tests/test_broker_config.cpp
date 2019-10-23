@@ -51,21 +51,10 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 
   const std::string kScope = "default";
   const uint16_t kListenPort = 8888;
-  const std::set<rdmnet::BrokerSettings::MacAddress> kListenMacs = {{0x00, 0xc0, 0x16, 0x01, 0x23, 0x45},
-                                                                    {0x00, 0xc0, 0x16, 0x33, 0x33, 0x33}};
-  const std::set<EtcPalIpAddr> kListenAddrs;
-
-  auto MacToString = [](const rdmnet::BrokerSettings::MacAddress& mac) {
-    auto ByteToString = [](uint8_t byte) {
-      std::stringstream stream;
-      stream << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(byte);
-      return stream.str();
-    };
-    return "\"" +
-           std::accumulate(std::next(mac.begin()), mac.end(), ByteToString(mac[0]),
-                           [&](std::string a, uint8_t b) { return std::move(a) + ':' + ByteToString(b); }) +
-           "\"";
-  };
+  const std::set<etcpal::MacAddr> kListenMacs = {etcpal::MacAddr({0x00, 0xc0, 0x16, 0x01, 0x23, 0x45}),
+                                                 etcpal::MacAddr({0x00, 0xc0, 0x16, 0x33, 0x33, 0x33})};
+  const std::set<etcpal::IpAddr> kListenAddrs = {etcpal::IpAddr::FromString("10.101.1.2"),
+                                                 etcpal::IpAddr::FromString("2001:db8::1234:5678")};
 
   const unsigned int kMaxConnections = 20000;
   const unsigned int kMaxControllers = 1000;
@@ -91,9 +80,16 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 
       "scope": ")" + kScope + R"(",
       "listen_port": )" + std::to_string(kListenPort) + R"(,
-      "listen_macs": [ )" + std::accumulate(std::next(kListenMacs.begin()), kListenMacs.end(), MacToString(*kListenMacs.begin()), [MacToString](std::string a, auto b) {
-          return std::move(a) + ", " + MacToString(b);
-       }) + R"( ],
+      "listen_macs": [ )" + std::accumulate(std::next(kListenMacs.begin()), kListenMacs.end(),
+                                            "\"" + kListenMacs.begin()->ToString() + "\"",
+                                            [](std::string a, auto b) {
+                                              return std::move(a) + ", \"" + b.ToString() + "\"";
+                                            }) + R"( ],
+      "listen_addrs": [ )" + std::accumulate(std::next(kListenAddrs.begin()), kListenAddrs.end(),
+                                            "\"" + kListenAddrs.begin()->ToString() + "\"",
+                                            [](std::string a, auto b) {
+                                              return std::move(a) + ", \"" + b.ToString() + "\"";
+                                            }) + R"( ],
 
       "max_connections": )" + std::to_string(kMaxConnections) + R"(,
       "max_controllers": )" + std::to_string(kMaxControllers) + R"(,
@@ -105,7 +101,6 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
   )";
   // clang-format on
 
-  std::cout << kFullValidConfig;
   std::istringstream test_stream(kFullValidConfig);
   ASSERT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
 
@@ -121,6 +116,8 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 
   EXPECT_EQ(config_.settings.scope, kScope);
   EXPECT_EQ(config_.settings.listen_port, kListenPort);
+  EXPECT_EQ(config_.settings.listen_macs, kListenMacs);
+  EXPECT_EQ(config_.settings.listen_addrs, kListenAddrs);
 
   EXPECT_EQ(config_.settings.max_connections, kMaxConnections);
   EXPECT_EQ(config_.settings.max_controllers, kMaxControllers);
@@ -428,10 +425,155 @@ TEST_F(TestBrokerConfig, ValidScopeParsedCorrectly)
   EXPECT_EQ(config_.settings.scope, kTestScope);
 }
 
+TEST_F(TestBrokerConfig, InvalidListenPortShouldFail)
+{
+  // clang-format off
+  const std::vector<std::string> kInvalidStrings =
+  {
+    // Invalid types
+    R"( { "listen_port": false } )",
+    R"( { "listen_port": true } )",
+    R"( { "listen_port": {} } )",
+    R"( { "listen_port": [] } )",
+    R"( { "listen_port": "string" } )",
+    // Invalid values
+    R"( { "listen_port": -20 } )",
+    R"( { "listen_port": 0 } )",
+    R"( { "listen_port": 1023 } )",
+    R"( { "listen_port": 65536 } )",
+  };
+  // clang-format on
+
+  for (const auto& invalid_input : kInvalidStrings)
+  {
+    std::istringstream test_stream(invalid_input);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kInvalidSetting)
+        << "Input tested: " << invalid_input;
+  }
+}
+
+TEST_F(TestBrokerConfig, ValidListenPortParsedCorrectly)
+{
+  struct ValidInput
+  {
+    std::string config_string;
+    uint16_t value;
+  };
+  // clang-format off
+  const std::vector<ValidInput> kValidPortStrings =
+  {
+    { R"( { "listen_port": 1024 } )", 1024 },
+    { R"( { "listen_port": 8888 } )", 8888 },
+    { R"( { "listen_port": 65535 } )", 65535 }
+  };
+  // clang-format on
+
+  for (const auto& valid_input : kValidPortStrings)
+  {
+    std::istringstream test_stream(valid_input.config_string);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk)
+        << "Input tested: " << valid_input.config_string;
+    EXPECT_EQ(config_.settings.listen_port, valid_input.value);
+  }
+}
+
+TEST_F(TestBrokerConfig, InvalidMacListShouldFail)
+{
+  // clang-format off
+  const std::vector<std::string> kInvalidStrings =
+  {
+    // Invalid types
+    R"( { "listen_macs": 0 } )",
+    R"( { "listen_macs": false } )",
+    R"( { "listen_macs": true } )",
+    R"( { "listen_macs": {} } )",
+    R"( { "listen_macs": "string" } )",
+    // Invalid values
+    R"( { "listen_macs": [ 0 ] } )",
+    R"( { "listen_macs": [ false ] } )",
+    R"( { "listen_macs": [ true ] } )",
+    R"( { "listen_macs": [ { "mac": "00:c0:16:30:30:31" } ] } )",
+    R"( { "listen_macs": [ [ "00:c0:16:30:30:31" ] ] } )",
+    R"( { "listen_macs": [ "00:c0:16:30:30:31", 20, "00:c0:16:30:30:32" ] } )",
+    R"( { "listen_macs": [ "00:c0:16:30:30:3" ] } )",
+    R"( { "listen_macs": [ ":00:c0:16:30:30:31:" ] } )",
+    R"( { "listen_macs": [ "00:c0:16::30:30:31" ] } )",
+    // R"( { "listen_macs": [ "00:c0:16:30:30:31:32" ] } )"
+  };
+  // clang-format on
+
+  for (const auto& invalid_input : kInvalidStrings)
+  {
+    std::istringstream test_stream(invalid_input);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kInvalidSetting)
+        << "Input tested: " << invalid_input;
+  }
+}
+
+TEST_F(TestBrokerConfig, ValidMacListParsedSuccessfully)
+{
+  const std::set kTestMacList = {etcpal::MacAddr({0, 1, 2, 3, 4, 5}), etcpal::MacAddr({5, 4, 3, 2, 1, 0})};
+  const std::string kValidConfig = R"( { "listen_macs": [ ")" + kTestMacList.begin()->ToString() + R"(", ")" +
+                                   std::next(kTestMacList.begin())->ToString() + R"(" ] } )";
+
+  std::istringstream test_stream(kValidConfig);
+  ASSERT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
+  EXPECT_EQ(config_.settings.listen_macs, kTestMacList);
+}
+
+TEST_F(TestBrokerConfig, InvalidIpAddrListShouldFail)
+{
+  // clang-format off
+  const std::vector<std::string> kInvalidStrings =
+  {
+    // Invalid types
+    R"( { "listen_addrs": 0 } )",
+    R"( { "listen_addrs": false } )",
+    R"( { "listen_addrs": true } )",
+    R"( { "listen_addrs": {} } )",
+    R"( { "listen_addrs": "string" } )",
+    // Invalid values
+    R"( { "listen_addrs": [ 0 ] } )",
+    R"( { "listen_addrs": [ false ] } )",
+    R"( { "listen_addrs": [ true ] } )",
+    R"( { "listen_addrs": [ { "addr": "10.101.2.3" } ] } )",
+    R"( { "listen_addrs": [ [ "10.101.2.3" ] ] } )",
+    R"( { "listen_addrs": [ "10.101.2.3", 20, "2001:db8::1234:5678" ] } )",
+    R"( { "listen_addrs": [ "10.101.2." ] } )",
+    R"( { "listen_addrs": [ ".10.101.2.3." ] } )",
+    R"( { "listen_addrs": [ "10.101..2.3" ] } )",
+    R"( { "listen_addrs": [ "2001::db8::1234" ] } )",
+  };
+  // clang-format on
+
+  for (const auto& invalid_input : kInvalidStrings)
+  {
+    std::istringstream test_stream(invalid_input);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kInvalidSetting)
+        << "Input tested: " << invalid_input;
+  }
+}
+
+TEST_F(TestBrokerConfig, ValidIpAddrListParsedSuccessfully)
+{
+  const std::set kTestAddrList = {etcpal::IpAddr(0xdeadbeef), etcpal::IpAddr::FromString("2001:db8::1234:5678")};
+  const std::string kValidConfig = R"( { "listen_addrs": [ ")" + kTestAddrList.begin()->ToString() + R"(", ")" +
+                                   std::next(kTestAddrList.begin())->ToString() + R"(" ] } )";
+
+  std::istringstream test_stream(kValidConfig);
+  ASSERT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
+  EXPECT_EQ(config_.settings.listen_addrs, kTestAddrList);
+}
+
 void TestBrokerConfig::TestInvalidUnsignedIntValueHelper(const std::string& key)
 {
   // clang-format off
   const std::vector<std::string> kInvalidIntStrings = {
+    R"( { ")" + key + R"(": false } )",
+    R"( { ")" + key + R"(": true } )",
+    R"( { ")" + key + R"(": {} } )",
+    R"( { ")" + key + R"(": [] } )",
+    R"( { ")" + key + R"(": "string" } )",
     R"( { ")" + key + R"(": -1000 })",
     R"( { ")" + key + R"(": -30.3 })",
     R"( { ")" + key + R"(": 20.3 })",
