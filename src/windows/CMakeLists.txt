@@ -4,7 +4,7 @@ add_executable(RDMnetBrokerService
   broker_service.cpp
   service_utils.h
   service_utils.cpp
-  win_broker_log.h
+  # win_broker_log.h
   win_broker_log.cpp
   win_broker_shell.h
   win_broker_shell.cpp
