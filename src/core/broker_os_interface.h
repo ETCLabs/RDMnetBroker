@@ -17,28 +17,17 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#ifndef WIN_BROKER_LOG_H_
-#define WIN_BROKER_LOG_H_
+#ifndef BROKER_OS_INTERFACE_H_
+#define BROKER_OS_INTERFACE_H_
 
-#include "rdmnet/broker/log.h"
+#include "etcpal/log.h"
 
-#include <cstdio>
-#include <fstream>
-#include <winsock2.h>
-#include <windows.h>
-
-class WindowsBrokerLog : public rdmnet::BrokerLog
+class BrokerOsInterface
 {
-private:
-  FILE* log_file_{nullptr};
+public:
+  virtual ~BrokerOsInterface() = default;
 
-  bool OnStartup() override;
-  void OnShutdown() override;
-  void GetTimeFromCallback(EtcPalLogTimeParams& time) override;
-  void OutputLogMsg(const std::string& str) override;
-
-  std::wstring GetOrCreateLogFilePath();
-  void RotateLogs(const std::wstring& log_file_path);
+  virtual void GetTime(EtcPalLogTimeParams& time) = 0;
 };
 
-#endif  // WIN_BROKER_LOG_H_
+#endif  // BROKER_OS_INTERFACE_H_
