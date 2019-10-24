@@ -100,7 +100,7 @@ BrokerService::BrokerService(const wchar_t* service_name) : name_(service_name)
   status_.dwWaitHint = 0;
 }
 
-void BrokerService::Start(DWORD dwArgc, PWSTR* pszArgv)
+void BrokerService::Start(DWORD /*dwArgc*/, PWSTR* /*pszArgv*/)
 {
   try
   {

@@ -4,8 +4,6 @@ add_library(RDMnetBrokerServiceCore
   broker_config.cpp
   broker_shell.h
   broker_shell.cpp
-  broker_service_log.h
-  broker_service_log.cpp
   broker_os_interface.h
 )
 target_include_directories(RDMnetBrokerServiceCore PUBLIC ${CMAKE_CURRENT_LIST_DIR})

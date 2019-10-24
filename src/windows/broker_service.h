@@ -23,8 +23,8 @@
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
-#include "win_broker_shell.h"
-#include "win_broker_log.h"
+#include "broker_shell.h"
+#include "win_broker_os_interface.h"
 
 class BrokerService
 {
@@ -33,8 +33,8 @@ public:
   // Run(BrokerService*), the SCM issues a Start command, which results in a call to the OnStart
   // method in the service. This method blocks until the service has stopped.
   static bool RunService(BrokerService* service);
-  void Run() { broker_shell_.Run(log_); }
-  int Debug() { return (broker_shell_.Run(log_, true) ? 0 : 1); }
+  void Run() { broker_shell_.Run(); }
+  int Debug() { return (broker_shell_.Run(true) ? 0 : 1); }
 
   BrokerService(const wchar_t* service_name);
 
@@ -54,8 +54,9 @@ private:
   static DWORD WINAPI ServiceThread(LPVOID* arg);
 
   static BrokerService* service_;  // The singleton service instance.
-  WindowsBrokerShell broker_shell_;
-  WindowsBrokerLog log_;
+
+  WindowsBrokerOsInterface os_interface_;
+  BrokerShell broker_shell_{os_interface_};
 
   std::wstring name_;                             // The name of the service
   SERVICE_STATUS status_{};                       // The status of the service

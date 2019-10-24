@@ -28,6 +28,7 @@
 #include "etcpal/log.h"
 #include "rdmnet/broker.h"
 #include "broker_config.h"
+#include "broker_os_interface.h"
 
 // BrokerShell : Platform-neutral wrapper around the Broker library from a generic console
 // application. Instantiates and drives the Broker library.
@@ -35,24 +36,26 @@
 class BrokerShell : public rdmnet::BrokerNotify
 {
 public:
-  bool Run(rdmnet::BrokerLog& log, bool debug_mode = false);
+  BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface) {}
+  bool Run(bool debug_mode = false);
 
   void NetworkChanged();
   void AsyncShutdown();
 
-protected:
-  BrokerConfig broker_config_;
-
-  virtual bool LoadBrokerConfig(rdmnet::BrokerLog& log) = 0;
-
 private:
+  BrokerOsInterface& os_interface_;
   rdmnet::Broker broker_;
-  rdmnet::BrokerLog* log_{nullptr};
+  rdmnet::BrokerLog log_;
+
+  BrokerConfig broker_config_;
 
   // Handle changes at runtime
   std::atomic<bool> restart_requested_{false};
   bool shutdown_requested_{false};
   std::string new_scope_;
+
+  bool OpenLogFile();
+  bool LoadBrokerConfig();
 
   void HandleScopeChanged(const std::string& new_scope) override;
   void PrintWarningMessage();

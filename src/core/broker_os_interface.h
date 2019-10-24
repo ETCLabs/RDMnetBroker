@@ -20,14 +20,20 @@
 #ifndef BROKER_OS_INTERFACE_H_
 #define BROKER_OS_INTERFACE_H_
 
-#include "etcpal/log.h"
+#include <fstream>
+#include <string>
+#include <utility>
+#include "rdmnet/broker/log.h"
+#include "broker_config.h"
 
-class BrokerOsInterface
+class BrokerOsInterface : public rdmnet::BrokerLogInterface
 {
 public:
   virtual ~BrokerOsInterface() = default;
 
-  virtual void GetTime(EtcPalLogTimeParams& time) = 0;
+  virtual std::string GetLogFilePath() const = 0;
+  virtual bool OpenLogFile() = 0;
+  virtual std::pair<std::string, std::ifstream> GetConfFile(rdmnet::BrokerLog& log) = 0;
 };
 
 #endif  // BROKER_OS_INTERFACE_H_

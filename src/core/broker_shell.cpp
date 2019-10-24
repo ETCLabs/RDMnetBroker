@@ -25,57 +25,25 @@
 #include "etcpal/thread.h"
 #include "rdmnet/version.h"
 
-void BrokerShell::HandleScopeChanged(const std::string& new_scope)
+bool BrokerShell::Run(bool /*debug_mode*/)
 {
-  if (log_)
-    log_->Info("Scope change detected, restarting broker and applying changes");
-
-  new_scope_ = new_scope;
-  restart_requested_ = true;
-}
-
-void BrokerShell::NetworkChanged()
-{
-  if (log_)
-    log_->Info("Network change detected, restarting broker and applying changes");
-
-  restart_requested_ = true;
-}
-
-void BrokerShell::AsyncShutdown()
-{
-  if (log_)
-    log_->Info("Shutdown requested, Broker shutting down...");
-
-  shutdown_requested_ = true;
-}
-
-void BrokerShell::ApplySettingsChanges(rdmnet::BrokerSettings& settings)
-{
-  if (!new_scope_.empty())
-  {
-    settings.scope = new_scope_;
-    new_scope_.clear();
-  }
-}
-
-bool BrokerShell::Run(rdmnet::BrokerLog& log, bool /*debug_mode*/)
-{
-  log_ = &log;
-  if (!log_->Startup(ETCPAL_LOG_UPTO(ETCPAL_LOG_DEBUG)))
+  if (!OpenLogFile())
     return false;
 
-  if (!LoadBrokerConfig(log))
+  if (!log_.Startup(os_interface_))
+    return false;
+
+  if (!LoadBrokerConfig())
   {
-    log_->Shutdown();
+    log_.Shutdown();
     return false;
   }
 
-  log_->SetLogMask(broker_config_.log_mask);
+  log_.SetLogMask(broker_config_.log_mask);
 
-  if (!broker_.Startup(broker_config_.settings, this, log_))
+  if (!broker_.Startup(broker_config_.settings, this, &log_))
   {
-    log_->Shutdown();
+    log_.Shutdown();
     return false;
   }
 
@@ -95,13 +63,74 @@ bool BrokerShell::Run(rdmnet::BrokerLog& log, bool /*debug_mode*/)
       broker_.Shutdown();
 
       ApplySettingsChanges(broker_settings);
-      broker_.Startup(broker_settings, this, log_);
+      broker_.Startup(broker_settings, this, &log_);
     }
 
     etcpal_thread_sleep(300);
   }
 
   broker_.Shutdown();
-  log_->Shutdown();
+  log_.Shutdown();
   return true;
+}
+
+bool BrokerShell::OpenLogFile()
+{
+  return os_interface_.OpenLogFile();
+}
+
+bool BrokerShell::LoadBrokerConfig()
+{
+  auto conf_file_pair = os_interface_.GetConfFile(log_);
+  if (!conf_file_pair.second.is_open())
+  {
+    if (conf_file_pair.first.empty())
+    {
+      log_.Notice("Error opening configuration file. Proceeding with default settings...");
+    }
+    else
+    {
+      log_.Notice("Error opening configuration file located at path \"%s\". Proceeding with default settings...",
+                  conf_file_pair.first.c_str());
+    }
+    broker_config_.SetDefaults();
+  }
+
+  log_.Info("Reading configuration file at %s...", conf_file_pair.first.c_str());
+
+  auto parse_res = broker_config_.Read(conf_file_pair.second, &log_);
+  if (parse_res != BrokerConfig::ParseResult::kOk)
+  {
+    log_.Critical("FATAL: Error while reading configuration file.");
+    return false;
+  }
+  return true;
+}
+
+void BrokerShell::HandleScopeChanged(const std::string& new_scope)
+{
+  log_.Info("Scope change detected, restarting broker and applying changes");
+  new_scope_ = new_scope;
+  restart_requested_ = true;
+}
+
+void BrokerShell::NetworkChanged()
+{
+  log_.Info("Network change detected, restarting broker and applying changes");
+  restart_requested_ = true;
+}
+
+void BrokerShell::AsyncShutdown()
+{
+  log_.Info("Shutdown requested, Broker shutting down...");
+  shutdown_requested_ = true;
+}
+
+void BrokerShell::ApplySettingsChanges(rdmnet::BrokerSettings& settings)
+{
+  if (!new_scope_.empty())
+  {
+    settings.scope = new_scope_;
+    new_scope_.clear();
+  }
 }
