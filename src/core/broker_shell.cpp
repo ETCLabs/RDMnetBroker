@@ -71,6 +71,8 @@ bool BrokerShell::Run(rdmnet::BrokerLog& log, bool /*debug_mode*/)
     return false;
   }
 
+  log_->SetLogMask(broker_config_.log_mask);
+
   if (!broker_.Startup(broker_config_.settings, this, log_))
   {
     log_->Shutdown();

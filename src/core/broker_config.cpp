@@ -19,11 +19,11 @@
 
 #include "broker_config.h"
 
-#include <array>
 #include <cinttypes>
 #include <functional>
 #include <fstream>
 #include <limits>
+#include <map>
 #include <type_traits>
 #include <utility>
 #include "etcpal/uuid.h"
@@ -196,9 +196,7 @@ public:
 };
 
 // Specialize this for each type that ValidateAndStoreInt is used for.
-template <>
 const char* FormatStringOf<unsigned int>::value = "%u";
-template <>
 const char* FormatStringOf<uint16_t>::value = "%" PRIu16;
 
 // Validate an arithmetic type and set it in the settings struct if it is within the valid range
@@ -217,6 +215,7 @@ bool ValidateAndStoreInt(const char* key_ptr, const json& val, IntType& setting,
                   std::string("Integer value \"%" PRId64 "\" is outside allowable range [") +
                       FormatStringOf<IntType>::value + ", " + FormatStringOf<IntType>::value + "] for field \"%s\".",
                   int_val, limits.first, limits.second, key_ptr);
+    return false;
   }
   setting = static_cast<IntType>(int_val);
   return true;
@@ -229,12 +228,15 @@ bool ValidateAndStoreMacList(const json& val, BrokerConfig& config, rdmnet::Brok
   {
     if (json_mac.type() != json::value_t::string)
     {
+      LogParseError(log, "The array field \"/listen_macs\" may only contain values of type \"string\".");
       config.settings.listen_macs.clear();
       return false;
     }
     etcpal::MacAddr mac = etcpal::MacAddr::FromString(json_mac);
     if (mac.IsNull())
     {
+      LogParseError(log, "The value \"%s\" in array field \"/listen_macs\" is not a valid MAC address.",
+                    std::string(json_mac).c_str());
       config.settings.listen_macs.clear();
       return false;
     }
@@ -250,17 +252,53 @@ bool ValidateAndStoreIpList(const json& val, BrokerConfig& config, rdmnet::Broke
   {
     if (json_ip.type() != json::value_t::string)
     {
+      LogParseError(log, "The array field \"/listen_addrs\" may only contain values of type \"string\".");
       config.settings.listen_addrs.clear();
       return false;
     }
     etcpal::IpAddr ip = etcpal::IpAddr::FromString(json_ip);
     if (!ip.IsValid())
     {
+      LogParseError(log, "The value \"%s\" in array field \"/listen_macs\" is not a valid IP address.",
+                    std::string(json_ip).c_str());
       config.settings.listen_addrs.clear();
       return false;
     }
     config.settings.listen_addrs.insert(ip);
   }
+  return true;
+}
+
+// clang-format off
+const std::map<std::string, int> kLogLevelOptions = {
+  {"debug", ETCPAL_LOG_UPTO(ETCPAL_LOG_DEBUG)},
+  {"info", ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO)},
+  {"notice", ETCPAL_LOG_UPTO(ETCPAL_LOG_NOTICE)},
+  {"warning", ETCPAL_LOG_UPTO(ETCPAL_LOG_WARNING)},
+  {"err", ETCPAL_LOG_UPTO(ETCPAL_LOG_ERR)},
+  {"crit", ETCPAL_LOG_UPTO(ETCPAL_LOG_CRIT)},
+  {"alert", ETCPAL_LOG_UPTO(ETCPAL_LOG_ALERT)},
+  {"emerg", ETCPAL_LOG_UPTO(ETCPAL_LOG_EMERG)},
+};
+// clang-format on
+
+bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, rdmnet::BrokerLog* log)
+{
+  const std::string log_level = val;
+  auto level_pair = kLogLevelOptions.find(log_level);
+  if (level_pair == kLogLevelOptions.end())
+  {
+    // Join the possible log level option keys into a comma-separated list to log for user benefit.
+    std::string format = "The value for field \"/log_level\" must be one of {" +
+                         std::accumulate(std::next(kLogLevelOptions.begin()), kLogLevelOptions.end(),
+                                         "\"" + kLogLevelOptions.begin()->first + "\"",
+                                         [](std::string a, auto b) { return std::move(a) + ", \"" + b.first + "\""; }) +
+                         "}.";
+    LogParseError(log, format);
+    return false;
+  }
+
+  config.log_mask = level_pair->second;
   return true;
 }
 
@@ -287,6 +325,8 @@ bool ValidateAndStoreIpList(const json& val, BrokerConfig& config, rdmnet::Broke
 //     "10.101.13.37",
 //     "2001:db8::1234:5678"
 //   ],
+//
+//   "log_level": "info",
 //
 //   "max_connections": 20000,
 //   "max_controllers": 1000,
@@ -367,6 +407,12 @@ static const Validator kSettingsValidatorArray[] = {
     std::function<void(BrokerConfig&)>() // Leave the default constructed listen_addrs value.
   },
   {
+    "/log_level"_json_pointer,
+    json::value_t::string,
+    ValidateAndStoreLogLevel,
+    std::function<void(BrokerConfig&)>() // Leave the default constructed log_mask value.
+  },
+  {
     "/max_connections"_json_pointer,
     json::value_t::number_unsigned,
     [](const json& val, auto& config, auto log) {
@@ -416,16 +462,6 @@ static const Validator kSettingsValidatorArray[] = {
   }
 };
 // clang-format on
-
-// Read the JSON configuration from a file.
-// BrokerConfig::ParseResult BrokerConfig::Read(const std::string& file_name)
-//{
-//  std::ifstream file_stream(file_name);
-//  if (!file_stream.is_open())
-//    return ParseResult::kFileOpenErr;
-//
-//  return Read(file_stream);
-//}
 
 // Read the JSON configuration from an input stream.
 BrokerConfig::ParseResult BrokerConfig::Read(std::istream& stream, rdmnet::BrokerLog* log)
@@ -494,7 +530,10 @@ BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(rdmnet::BrokerLog* log)
         setting.store_default(*this);
 
       if (log)
-        log->Debug("Using default value for setting \"%s\".", setting.pointer.to_string().c_str());
+      {
+        log->Debug("Configuration file: No value present for \"%s\", using default.",
+                   setting.pointer.to_string().c_str());
+      }
     }
   }
   return ParseResult::kOk;

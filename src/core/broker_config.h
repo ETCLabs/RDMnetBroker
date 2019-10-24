@@ -22,9 +22,10 @@
 
 #include <istream>
 #include <string>
-#include "etcpal/netint.h"
-#include "etcpal/inet.h"
 #include "etcpal/cpp/uuid.h"
+#include "etcpal/inet.h"
+#include "etcpal/log.h"
+#include "etcpal/netint.h"
 #include "rdmnet/broker.h"
 #include "nlohmann/json.hpp"
 
@@ -43,13 +44,13 @@ public:
     kOk
   };
 
-  //[[nodiscard]] ParseResult Read(const std::string& file_name, rdmnet::BrokerLog* log = nullptr);
   [[nodiscard]] ParseResult Read(std::istream& stream, rdmnet::BrokerLog* log = nullptr);
   void SetDefaults();
 
   [[nodiscard]] const etcpal::Uuid& default_cid() const { return default_cid_; }
 
   rdmnet::BrokerSettings settings;
+  int log_mask{ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO)};
 
 private:
   ParseResult ValidateCurrent(rdmnet::BrokerLog* log);

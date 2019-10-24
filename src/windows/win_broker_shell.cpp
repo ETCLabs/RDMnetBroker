@@ -27,6 +27,22 @@
 
 constexpr const WCHAR kRelativeConfFileName[] = L"\\ETC\\RDMnetBroker\\broker.conf";
 
+std::unique_ptr<char[]> ConvertPathToUtf8(const std::wstring& conf_file_path)
+{
+  // Convert the path to UTF-8
+  int size_needed = WideCharToMultiByte(CP_UTF8, 0, conf_file_path.c_str(), -1, NULL, 0, NULL, NULL);
+  if (size_needed > 0)
+  {
+    auto buf = std::make_unique<char[]>(size_needed);
+    int convert_res = WideCharToMultiByte(CP_UTF8, 0, conf_file_path.c_str(), -1, buf.get(), size_needed, NULL, NULL);
+    if (convert_res > 0)
+    {
+      return buf;
+    }
+  }
+  return std::unique_ptr<char[]>();
+}
+
 bool WindowsBrokerShell::LoadBrokerConfig(rdmnet::BrokerLog& log)
 {
   PWSTR program_data_path;
@@ -40,9 +56,13 @@ bool WindowsBrokerShell::LoadBrokerConfig(rdmnet::BrokerLog& log)
   std::wstring conf_file_path = std::wstring(program_data_path) + kRelativeConfFileName;
   CoTaskMemFree(program_data_path);
 
+  auto conf_file_path_utf8 = ConvertPathToUtf8(conf_file_path);
+
   std::ifstream conf_file(conf_file_path);
   if (conf_file.is_open())
   {
+    log.Info("Reading configuration file at %s...", conf_file_path_utf8.get());
+
     auto parse_res = broker_config_.Read(conf_file, &log);
     if (parse_res != BrokerConfig::ParseResult::kOk)
     {
@@ -52,21 +72,14 @@ bool WindowsBrokerShell::LoadBrokerConfig(rdmnet::BrokerLog& log)
   }
   else
   {
-    // Convert the path to UTF-8
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, conf_file_path.c_str(), -1, NULL, 0, NULL, NULL);
-    if (size_needed > 0)
+    if (conf_file_path_utf8)
     {
-      auto buf = std::make_unique<char[]>(size_needed);
-      int convert_res = WideCharToMultiByte(CP_UTF8, 0, conf_file_path.c_str(), -1, buf.get(), size_needed, NULL, NULL);
-      if (convert_res > 0)
-      {
-        // Remove the NULL from being included in the string's count
-        log.Notice("No configuration file located at path \"%s\". Proceeding with default settings...", buf.get());
-      }
-      else
-      {
-        log.Notice("No configuration file found. Proceeding with default settings...");
-      }
+      log.Notice("No configuration file located at path \"%s\". Proceeding with default settings...",
+                 conf_file_path_utf8.get());
+    }
+    else
+    {
+      log.Notice("No configuration file found. Proceeding with default settings...");
     }
     broker_config_.SetDefaults();
   }
