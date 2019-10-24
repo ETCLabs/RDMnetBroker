@@ -76,7 +76,12 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
 bool BrokerShell::OpenLogFile()
 {
-  return os_interface_.OpenLogFile();
+  if (!os_interface_.OpenLogFile())
+  {
+    log_.Critical("FATAL: Error opening log file for writing at path \"%s\".", os_interface_.GetLogFilePath().c_str());
+    return false;
+  }
+  return true;
 }
 
 bool BrokerShell::LoadBrokerConfig()
