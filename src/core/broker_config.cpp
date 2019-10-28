@@ -196,8 +196,10 @@ public:
 };
 
 // Specialize this for each type that ValidateAndStoreInt is used for.
-const char* FormatStringOf<unsigned int>::value = "%u";
-const char* FormatStringOf<uint16_t>::value = "%" PRIu16;
+// clang-format off
+template<> const char* FormatStringOf<unsigned int>::value = "%u";
+template<> const char* FormatStringOf<uint16_t>::value = "%" PRIu16;
+// clang-format on
 
 // Validate an arithmetic type and set it in the settings struct if it is within the valid range
 // for its type.
