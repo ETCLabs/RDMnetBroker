@@ -28,7 +28,7 @@
 
 constexpr wchar_t kServiceName[] = L"ETC RDMnet Broker";         // Internal name of the service
 constexpr wchar_t kServiceDisplayName[] = L"ETC RDMnet Broker";  // Displayed name of the service
-constexpr int kServiceStartType = SERVICE_DEMAND_START;          // Service start options.
+constexpr int kServiceStartType = SERVICE_AUTO_START;            // Service start options.
 constexpr wchar_t kServiceDependencies[] = L"";                  // List of service dependencies - "dep1\0dep2\0\0"
 
 void PrintUsage(const wchar_t* app_name)

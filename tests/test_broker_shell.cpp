@@ -49,6 +49,10 @@ protected:
   BrokerShell shell_{os_interface_};
 };
 
+// TODO - if these tests don't work as expected, we might start a real broker and enter an infinite
+// loop. This will be caught by the CTest timeout but it's not ideal. RDMNET-137 has been created
+// to track making the broker mockable to avoid this situation.
+
 TEST_F(TestBrokerShell, DoesNotStartIfOpenLogFileFails)
 {
   EXPECT_CALL(os_interface_, OpenLogFile()).WillOnce(Return(false));
