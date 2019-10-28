@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <memory>
+#include <cassert>
 #include <Windows.h>
 #include <ShlObj.h>
 #include <datetimeapi.h>
@@ -31,7 +32,7 @@ static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetB
 static const std::wstring kLogFileName = L"broker.log";
 static constexpr int kMaxLogRotationFiles = 5;
 
-std::unique_ptr<char[]> ConvertWstringToUtf8(const std::wstring& str)
+std::string ConvertWstringToUtf8(const std::wstring& str)
 {
   // Convert the path to UTF-8
   int size_needed = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, NULL, 0, NULL, NULL);
@@ -41,10 +42,10 @@ std::unique_ptr<char[]> ConvertWstringToUtf8(const std::wstring& str)
     int convert_res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, buf.get(), size_needed, NULL, NULL);
     if (convert_res > 0)
     {
-      return buf;
+      return buf.get();
     }
   }
-  return std::unique_ptr<char[]>();
+  return std::string{};
 }
 
 WindowsBrokerOsInterface::WindowsBrokerOsInterface()
@@ -77,15 +78,13 @@ std::string WindowsBrokerOsInterface::GetLogFilePath() const
   if (log_file_path_.empty())
     return std::string{};
 
-  auto convert_res = ConvertWstringToUtf8(log_file_path_);
-  if (convert_res)
-    return convert_res.get();
-  else
-    return std::string{};
+  return ConvertWstringToUtf8(log_file_path_);
 }
 
 bool WindowsBrokerOsInterface::OpenLogFile()
 {
+  assert(!log_file_);
+
   if (program_data_path_.empty())
   {
     std::cout << "FATAL: Could not get location of ProgramData directory.\n";
@@ -131,12 +130,8 @@ bool WindowsBrokerOsInterface::OpenLogFile()
   {
     wchar_t error_msg[512];
     GetLastErrorMessage(rotate_result, error_msg, 512);
-    auto convert_res = ConvertWstringToUtf8(error_msg);
-    if (convert_res)
-    {
-      auto utf8_msg = "WARNING: rotating log files failed with error: \"" + std::string(convert_res.get()) + "\"\n";
-      fwrite(utf8_msg.c_str(), sizeof(char), utf8_msg.size(), log_file_);
-    }
+    auto log_msg = "WARNING: rotating log files failed with error: \"" + ConvertWstringToUtf8(error_msg) + "\"\n";
+    fwrite(log_msg.c_str(), sizeof(char), log_msg.size(), log_file_);
   }
 
   fflush(log_file_);
@@ -152,10 +147,9 @@ std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(rdmn
   }
 
   std::wstring conf_file_path = program_data_path_ + kRelativeConfFileName;
-  auto conf_file_path_utf8 = ConvertWstringToUtf8(conf_file_path);
-
   std::ifstream conf_file(conf_file_path);
-  return std::make_pair(std::string{conf_file_path_utf8.get()}, std::move(conf_file));
+
+  return std::make_pair(ConvertWstringToUtf8(conf_file_path), std::move(conf_file));
 }
 
 void WindowsBrokerOsInterface::GetLogTime(EtcPalLogTimeParams& time)

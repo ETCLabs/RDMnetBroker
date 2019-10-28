@@ -282,6 +282,17 @@ const std::map<std::string, int> kLogLevelOptions = {
 };
 // clang-format on
 
+// Join all the possible log levels in a readable set of the form {"level1", "level2", ...} for
+// error logging.
+std::string GetLogLevelOptions()
+{
+  return "{" +
+         std::accumulate(std::next(kLogLevelOptions.begin()), kLogLevelOptions.end(),
+                         "\"" + kLogLevelOptions.begin()->first + "\"",
+                         [](std::string a, auto b) { return std::move(a) + ", \"" + b.first + "\""; }) +
+         "}";
+}
+
 bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, rdmnet::BrokerLog* log)
 {
   const std::string log_level = val;
@@ -289,12 +300,7 @@ bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, rdmnet::Bro
   if (level_pair == kLogLevelOptions.end())
   {
     // Join the possible log level option keys into a comma-separated list to log for user benefit.
-    std::string format = "The value for field \"/log_level\" must be one of {" +
-                         std::accumulate(std::next(kLogLevelOptions.begin()), kLogLevelOptions.end(),
-                                         "\"" + kLogLevelOptions.begin()->first + "\"",
-                                         [](std::string a, auto b) { return std::move(a) + ", \"" + b.first + "\""; }) +
-                         "}.";
-    LogParseError(log, format);
+    LogParseError(log, "The value for field \"/log_level\" must be one of " + GetLogLevelOptions() + ".");
     return false;
   }
 
