@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <?include vars.wxi ?>
+
+  <Module Id="ETCRDMnetBroker" Language="0" Version="$(var.VersionNumber)" Codepage="1252">
+
+    <Package Id="91BEABF7-36CA-4720-91EF-117E6446DB3D" Description="ETC RDMnet Broker Service Merge Module"
+        Manufacturer="ETC Inc." InstallerVersion="200" Languages="1033" SummaryCodepage="1252"
+        InstallScope="perMachine" InstallPrivileges="elevated" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="ETC" Name="ETC">
+          <Directory Id="INSTALLDIR" Name="RDMnetBroker" FileSource="$(var.InstallSourceDir)">
+             <Component Id="Broker" Guid="2B4014E4-5278-469A-ABA7-A94F0AB850DA" SharedDllRefCount='yes'>
+                <File Id="BrokerExe" Name="RDMnetBrokerService.exe" DiskId="1" KeyPath="yes" />
+                <ServiceControl Id="BrokerServiceCtl" Name="ETC RDMnet Broker" Stop="both" />
+             </Component>
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <CustomAction Id="RemoveBrokerService" FileKey="BrokerExe" ExeCommand="-remove"
+        Execute="deferred" Impersonate="no" Return="ignore" />
+    <CustomAction Id="InstallBrokerService" FileKey="BrokerExe" ExeCommand="-install"
+        Execute="deferred" Impersonate="no" Return="check" />
+      
+    <InstallExecuteSequence>
+      <Custom Action="RemoveBrokerService" After="StopServices">REMOVE="ALL"</Custom>
+      <Custom Action="InstallBrokerService" Before="StartServices">NOT REMOVE="ALL"</Custom>
+    </InstallExecuteSequence>
+
+  </Module>
+</Wix>

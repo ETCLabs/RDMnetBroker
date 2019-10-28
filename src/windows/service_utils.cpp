@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <string>
 #include "service_utils.h"
 
 /// \brief Get the last system error code as a descriptive string.
@@ -55,13 +56,14 @@ void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size)
 ///
 /// \param[in] service_name The name of the service.
 /// \param[in] service_display_name The user-facing name that will display in the Services dialog.
+/// \param[in] description A description of the service that will display in the Services dialog.
 /// \param[in] start_type The service start option; one of SERVICE_AUTO_START, SERVICE_BOOT_START,
 ///                       SERVICE_DEMAND_START, SERVICE_DISABLED, SERVICE_SYSTEM_START.
 /// \param[in] dependencies Pointer to a double null-terminated array of null-separated names of
 ///                         services or load ordering groups that the system must start before this
 ///                         service.
-void InstallService(const wchar_t* service_name, const wchar_t* display_name, DWORD start_type,
-                    const wchar_t* dependencies)
+void InstallService(const wchar_t* service_name, const wchar_t* display_name, const wchar_t* description,
+                    DWORD start_type, const wchar_t* dependencies)
 {
   constexpr size_t kErrMsgSize = 256;
   wchar_t error_msg[kErrMsgSize];
@@ -84,23 +86,50 @@ void InstallService(const wchar_t* service_name, const wchar_t* display_name, DW
   }
 
   // Install the service into the Service Control Manager
-  SC_HANDLE service_handle = CreateService(manager_handle,             // SCManager database
-                                           service_name,               // Name of service
-                                           display_name,               // Name to display
-                                           SERVICE_QUERY_STATUS,       // Desired access
-                                           SERVICE_WIN32_OWN_PROCESS,  // Service type
-                                           start_type,                 // Service start type
-                                           SERVICE_ERROR_NORMAL,       // Error control type
-                                           my_file_name,               // Service's binary
-                                           nullptr,                    // No load ordering group
-                                           nullptr,                    // No tag identifier
-                                           dependencies,               // Dependencies
-                                           nullptr,                    // Service running account
-                                           nullptr                     // Password of the account
+  SC_HANDLE service_handle = CreateService(manager_handle,                                // SCManager database
+                                           service_name,                                  // Name of service
+                                           display_name,                                  // Name to display
+                                           SERVICE_QUERY_STATUS | SERVICE_CHANGE_CONFIG,  // Desired access
+                                           SERVICE_WIN32_OWN_PROCESS,                     // Service type
+                                           start_type,                                    // Service start type
+                                           SERVICE_ERROR_NORMAL,                          // Error control type
+                                           my_file_name,                                  // Service's binary
+                                           nullptr,                                       // No load ordering group
+                                           nullptr,                                       // No tag identifier
+                                           dependencies,                                  // Dependencies
+                                           nullptr,                                       // Service running account
+                                           nullptr                                        // Password of the account
   );
 
   if (service_handle)
   {
+    // Edit the service config
+
+    if (description)
+    {
+      // Set the service description
+      // Sigh... it's too much to ask for these APIs to be const-correct, isn't it?
+      std::wstring non_const_description = description;
+      SERVICE_DESCRIPTION service_desc;
+      service_desc.lpDescription = non_const_description.data();
+      ChangeServiceConfig2(service_handle, SERVICE_CONFIG_DESCRIPTION, &service_desc);
+    }
+
+    // Set the failure action - restart after 5 seconds
+    SERVICE_FAILURE_ACTIONS fail_actions;
+    fail_actions.dwResetPeriod = INFINITE;
+    fail_actions.lpRebootMsg = NULL;
+    fail_actions.lpCommand = NULL;
+    fail_actions.cActions = 1;
+
+    SC_ACTION action;
+    action.Delay = 5000;
+    action.Type = SC_ACTION_RESTART;
+
+    fail_actions.lpsaActions = &action;
+
+    ChangeServiceConfig2(service_handle, SERVICE_CONFIG_FAILURE_ACTIONS, &fail_actions);
+
     wprintf(L"%s is installed.\n", service_name);
     CloseServiceHandle(service_handle);
   }

@@ -6,6 +6,11 @@ add_executable(RDMnetBrokerService
   service_utils.cpp
   win_broker_os_interface.h
   win_broker_os_interface.cpp
+
+  Resource.aps
+  resource.h
+  Resource.rc
+
   main.cpp
 )
 target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore)
