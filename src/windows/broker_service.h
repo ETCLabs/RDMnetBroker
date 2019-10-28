@@ -33,14 +33,14 @@ public:
   // Run(BrokerService*), the SCM issues a Start command, which results in a call to the OnStart
   // method in the service. This method blocks until the service has stopped.
   static bool RunService(BrokerService* service);
-  void Run() { broker_shell_.Run(); }
+  int Run() { return (broker_shell_.Run() ? 0 : 1); }
   int Debug() { return (broker_shell_.Run(true) ? 0 : 1); }
+
+  void SetServiceStatus(DWORD current_state, DWORD win32_error = NO_ERROR, DWORD service_specific_error = 0);
 
   BrokerService(const wchar_t* service_name);
 
 private:
-  void SetServiceStatus(DWORD current_state, DWORD exit_code = NO_ERROR, DWORD wait_hint = 0);
-
   void WriteEventLogEntry(PWSTR message, WORD type);
   void WriteErrorLogEntry(PWSTR function_name, DWORD error = GetLastError());
 

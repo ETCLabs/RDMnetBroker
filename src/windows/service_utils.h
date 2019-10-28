@@ -27,6 +27,7 @@
 #include <windows.h>
 
 void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size);
+void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size);
 
 void InstallService(const wchar_t* service_name, const wchar_t* display_name, DWORD start_type,
                     const wchar_t* dependencies);

@@ -23,19 +23,22 @@
 #include <memory>
 #include <Windows.h>
 #include <ShlObj.h>
+#include <datetimeapi.h>
+#include "service_utils.h"
 
 constexpr const WCHAR kRelativeConfFileName[] = L"\\ETC\\RDMnetBroker\\broker.conf";
 static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetBroker"};
 static const std::wstring kLogFileName = L"broker.log";
+static constexpr int kMaxLogRotationFiles = 5;
 
-std::unique_ptr<char[]> ConvertPathToUtf8(const std::wstring& conf_file_path)
+std::unique_ptr<char[]> ConvertWstringToUtf8(const std::wstring& str)
 {
   // Convert the path to UTF-8
-  int size_needed = WideCharToMultiByte(CP_UTF8, 0, conf_file_path.c_str(), -1, NULL, 0, NULL, NULL);
+  int size_needed = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, NULL, 0, NULL, NULL);
   if (size_needed > 0)
   {
     auto buf = std::make_unique<char[]>(size_needed);
-    int convert_res = WideCharToMultiByte(CP_UTF8, 0, conf_file_path.c_str(), -1, buf.get(), size_needed, NULL, NULL);
+    int convert_res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, buf.get(), size_needed, NULL, NULL);
     if (convert_res > 0)
     {
       return buf;
@@ -74,7 +77,7 @@ std::string WindowsBrokerOsInterface::GetLogFilePath() const
   if (log_file_path_.empty())
     return std::string{};
 
-  auto convert_res = ConvertPathToUtf8(log_file_path_);
+  auto convert_res = ConvertWstringToUtf8(log_file_path_);
   if (convert_res)
     return convert_res.get();
   else
@@ -106,13 +109,37 @@ bool WindowsBrokerOsInterface::OpenLogFile()
     }
   }
 
-  RotateLogs();
+  DWORD rotate_result = RotateLogs();
+
   log_file_ = _wfsopen(log_file_path_.c_str(), L"w", _SH_DENYWR);
   if (!log_file_)
   {
     std::cout << "FATAL: Error opening log file for writing: " << errno << '\n';
     return false;
   }
+
+  // Write an initial message to the log file
+  EtcPalLogTimeParams time;
+  GetLogTime(time);
+  char initial_msg[100];
+  _snprintf_s<100>(initial_msg, _TRUNCATE, "Starting RDMnet Broker Service on %04d:%02d:%02d at %02d:%02d:%02d...\n",
+                   time.year, time.month, time.day, time.hour, time.minute, time.second);
+  fwrite(initial_msg, sizeof(char), strnlen_s(initial_msg, 100), log_file_);
+
+  // Write an error message to the log file if it is open and there was an error rotating the logs
+  if (rotate_result != 0)
+  {
+    wchar_t error_msg[512];
+    GetLastErrorMessage(rotate_result, error_msg, 512);
+    auto convert_res = ConvertWstringToUtf8(error_msg);
+    if (convert_res)
+    {
+      auto utf8_msg = "WARNING: rotating log files failed with error: \"" + std::string(convert_res.get()) + "\"\n";
+      fwrite(utf8_msg.c_str(), sizeof(char), utf8_msg.size(), log_file_);
+    }
+  }
+
+  fflush(log_file_);
   return true;
 }
 
@@ -125,7 +152,7 @@ std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(rdmn
   }
 
   std::wstring conf_file_path = program_data_path_ + kRelativeConfFileName;
-  auto conf_file_path_utf8 = ConvertPathToUtf8(conf_file_path);
+  auto conf_file_path_utf8 = ConvertWstringToUtf8(conf_file_path);
 
   std::ifstream conf_file(conf_file_path);
   return std::make_pair(std::string{conf_file_path_utf8.get()}, std::move(conf_file));
@@ -134,7 +161,6 @@ std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(rdmn
 void WindowsBrokerOsInterface::GetLogTime(EtcPalLogTimeParams& time)
 {
   int utc_offset = 0;
-
   TIME_ZONE_INFORMATION tzinfo;
   switch (GetTimeZoneInformation(&tzinfo))
   {
@@ -171,7 +197,37 @@ void WindowsBrokerOsInterface::OutputLogMsg(const std::string& str)
   }
 }
 
-void WindowsBrokerOsInterface::RotateLogs()
+DWORD WindowsBrokerOsInterface::RotateLogs()
 {
-  // TODO
+  // If we don't have the primary log file, just stop early
+  DWORD file_attr = GetFileAttributes(log_file_path_.c_str());
+  if (file_attr == INVALID_FILE_ATTRIBUTES)
+    return 0;
+
+  int rotate_number = 1;
+  auto LogBackupFileName = [&](int rotate_number) { return log_file_path_ + L"." + std::to_wstring(rotate_number); };
+
+  // Determine the highest log backup file that already exists on the system
+  for (; rotate_number < kMaxLogRotationFiles; ++rotate_number)
+  {
+    file_attr = GetFileAttributes(LogBackupFileName(rotate_number).c_str());
+    if (file_attr == INVALID_FILE_ATTRIBUTES)
+      break;
+  }
+
+  // Copy each file to the next higher-numbered file, starting with the highest and working down.
+  while (rotate_number-- > 0)
+  {
+    std::wstring src_file_name;
+    if (rotate_number == 0)
+      src_file_name = log_file_path_;
+    else
+      src_file_name = LogBackupFileName(rotate_number);
+
+    if (!CopyFile(src_file_name.c_str(), LogBackupFileName(rotate_number + 1).c_str(), FALSE))
+    {
+      return GetLastError();
+    }
+  }
+  return 0;
 }

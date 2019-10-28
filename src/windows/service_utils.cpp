@@ -29,9 +29,21 @@
 /// \param[in] buf_size Size of the output buffer.
 void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size)
 {
+  GetLastErrorMessage(GetLastError(), msg_buf_out, buf_size);
+}
+
+/// \brief Get a descriptive string for the given error code.
+///
+/// The string is copied into the buffer, truncating if necessary.
+///
+/// \param[in] code Error code for which to get the message.
+/// \param[out] msg_buf_out Buffer to fill in with the error string.
+/// \param[in] buf_size Size of the output buffer.
+void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size)
+{
   wchar_t* msg_buf;
   FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-                GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
+                code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
                 (LPWSTR)&msg_buf, 0, nullptr);
   wcsncpy_s(msg_buf_out, buf_size, msg_buf, _TRUNCATE);
   LocalFree(msg_buf);

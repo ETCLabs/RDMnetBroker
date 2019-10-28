@@ -42,7 +42,7 @@ private:
   std::wstring log_file_path_;
   FILE* log_file_{nullptr};
 
-  void RotateLogs();
+  DWORD RotateLogs();
 };
 
 #endif  // WIN_BROKER_OS_INTERFACE_H_
