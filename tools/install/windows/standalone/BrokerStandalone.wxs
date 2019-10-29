@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <?include ..\vars.wxi ?>
+  <?include GeneratedFiles\vcredist.wxi ?>
+  <?include GeneratedFiles\mdnsmerge.wxi ?>
+
+  <?define VcRedistMergeModulex86 = "$(var.VcRedistInstallLoc)\MergeModules\Microsoft_VC141_CRT_x86.msm" ?>
+
+  <Product Name="RDMnet Broker Service" Manufacturer="ETC Inc." Id="*"
+      UpgradeCode="0BC7218C-9425-4634-8B22-147C8F48A1DE" Language="1033" Codepage="1252"
+      Version="$(var.VersionNumber)">
+
+    <Package Id="*" Keywords="Installer" Description="$(var.ProductDescription)"
+        Manufacturer="ETC Inc." InstallerVersion="301" Languages="1033" Compressed="yes"
+        SummaryCodepage="1252" InstallScope="perMachine" InstallPrivileges="elevated" />
+
+    <MajorUpgrade
+        DowngradeErrorMessage="A newer version of [ProductName] is already installed. If you are trying to downgrade your installation, first uninstall the newer version."
+        AllowSameVersionUpgrades="yes" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!--
+    This is a thin wrapper over the Broker merge module. Also including the
+    required dependencies - the mDNSWindows and VCRedist merge modules.
+    -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Merge Id="VcRedistx86" SourceFile="$(var.VcRedistMergeModulex86)" DiskId="1" Language="0" />
+      <Merge Id="mDNSResponder" SourceFile="$(var.mDNSMergeModule)" DiskId="1" Language="0" />
+      <Merge Id="EtcRdmnetBroker" SourceFile="..\merge\bin\$(var.Configuration)\EtcRdmnetBroker.msm"
+          DiskId="1" Language="0" />
+    </Directory>
+
+    <Feature Id="VcRedistx86Feature" Title="Visual C++ 32-bit Runtime" AllowAdvertise="no"
+        Display="hidden" Level="1">
+      <MergeRef Id="VcRedistx86" />
+    </Feature>
+    <Feature Id="mDNSResponderFeature" Title="DNS-SD Service" AllowAdvertise="no" Display="hidden"
+        Level="1">
+      <MergeRef Id="mDNSResponder" />
+    </Feature>
+    <Feature Id="BrokerFeature" Title="RDMnet Broker Service $(var.VersionNumber)"
+        AllowAdvertise="no" Display="hidden" Level="1">
+      <MergeRef Id="EtcRdmnetBroker" />
+    </Feature>
+
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+  </Product>
+</Wix>

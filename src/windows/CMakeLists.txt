@@ -16,3 +16,11 @@ add_executable(RDMnetBrokerService
 target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore)
 target_compile_definitions(RDMnetBrokerService PRIVATE UNICODE _UNICODE)
 set_target_properties(RDMnetBrokerService PROPERTIES CXX_STANDARD 17)
+
+install(TARGETS RDMnetBrokerService
+  RUNTIME DESTINATION bin
+)
+
+configure_file(${PROJECT_SOURCE_DIR}/tools/cmake/mdnsmerge.wxi.in
+  ${PROJECT_SOURCE_DIR}/tools/install/windows/standalone/GeneratedFiles/mdnsmerge.wxi
+)
