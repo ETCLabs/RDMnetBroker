@@ -301,7 +301,6 @@ bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, rdmnet::Bro
   auto level_pair = kLogLevelOptions.find(log_level);
   if (level_pair == kLogLevelOptions.end())
   {
-    // Join the possible log level option keys into a comma-separated list to log for user benefit.
     LogParseError(log, "The value for field \"/log_level\" must be one of " + GetLogLevelOptions() + ".");
     return false;
   }

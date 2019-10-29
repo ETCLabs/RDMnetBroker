@@ -44,19 +44,19 @@ public:
     kOk
   };
 
+  rdmnet::BrokerSettings settings;
+  int log_mask{ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO)};
+
   [[nodiscard]] ParseResult Read(std::istream& stream, rdmnet::BrokerLog* log = nullptr);
   void SetDefaults();
 
   [[nodiscard]] const etcpal::Uuid& default_cid() const { return default_cid_; }
 
-  rdmnet::BrokerSettings settings;
-  int log_mask{ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO)};
-
 private:
-  ParseResult ValidateCurrent(rdmnet::BrokerLog* log);
-
   json current_;
   etcpal::Uuid default_cid_{etcpal::Uuid::OsPreferred()};
+
+  [[nodiscard]] ParseResult ValidateCurrent(rdmnet::BrokerLog* log);
 };
 
 #endif  // BROKER_CONFIG_H_
