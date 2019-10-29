@@ -23,6 +23,8 @@
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
+#include <WS2tcpip.h>
+#include <iphlpapi.h>
 #include "broker_shell.h"
 #include "win_broker_os_interface.h"
 
@@ -33,7 +35,6 @@ public:
   // Run(BrokerService*), the SCM issues a Start command, which results in a call to the OnStart
   // method in the service. This method blocks until the service has stopped.
   static bool RunService(BrokerService* service);
-  int Run() { return (broker_shell_.Run() ? 0 : 1); }
   int Debug() { return (broker_shell_.Run(true) ? 0 : 1); }
 
   void SetServiceStatus(DWORD current_state, DWORD win32_error = NO_ERROR, DWORD service_specific_error = 0);
@@ -52,6 +53,9 @@ private:
   void Shutdown();
 
   static DWORD WINAPI ServiceThread(LPVOID* arg);
+
+  static VOID NETIOAPI_API_ InterfaceChangeCallback(IN PVOID CallerContext, IN PMIB_IPINTERFACE_ROW Row,
+                                                    IN MIB_NOTIFICATION_TYPE NotificationType);
 
   static BrokerService* service_;  // The singleton service instance.
 
