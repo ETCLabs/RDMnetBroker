@@ -17,14 +17,14 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#ifndef _BROKER_SERVICE_H_
-#define _BROKER_SERVICE_H_
+#ifndef BROKER_SERVICE_H_
+#define BROKER_SERVICE_H_
 
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
 #include "broker_shell.h"
-#include "win_broker_log.h"
+#include "win_broker_os_interface.h"
 
 class BrokerService
 {
@@ -33,14 +33,14 @@ public:
   // Run(BrokerService*), the SCM issues a Start command, which results in a call to the OnStart
   // method in the service. This method blocks until the service has stopped.
   static bool RunService(BrokerService* service);
-  void Run() { broker_shell_.Run(&log_); }
-  void Debug() { broker_shell_.Run(&log_, true); }
+  int Run() { return (broker_shell_.Run() ? 0 : 1); }
+  int Debug() { return (broker_shell_.Run(true) ? 0 : 1); }
+
+  void SetServiceStatus(DWORD current_state, DWORD win32_error = NO_ERROR, DWORD service_specific_error = 0);
 
   BrokerService(const wchar_t* service_name);
 
 private:
-  void SetServiceStatus(DWORD current_state, DWORD exit_code = NO_ERROR, DWORD wait_hint = 0);
-
   void WriteEventLogEntry(PWSTR message, WORD type);
   void WriteErrorLogEntry(PWSTR function_name, DWORD error = GetLastError());
 
@@ -54,8 +54,9 @@ private:
   static DWORD WINAPI ServiceThread(LPVOID* arg);
 
   static BrokerService* service_;  // The singleton service instance.
-  BrokerShell broker_shell_;
-  WindowsBrokerLog log_;
+
+  WindowsBrokerOsInterface os_interface_;
+  BrokerShell broker_shell_{os_interface_};
 
   std::wstring name_;                             // The name of the service
   SERVICE_STATUS status_{};                       // The status of the service
@@ -63,4 +64,4 @@ private:
   HANDLE service_thread_{nullptr};
 };
 
-#endif  // _BROKER_SERVICE_H_
+#endif  // BROKER_SERVICE_H_

@@ -25,8 +25,12 @@ BrokerService* BrokerService::service_{nullptr};
 
 DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 {
-  service_->Run();
-  return 0;
+  DWORD result = service_->Run();
+  if (result != 0)
+  {
+    service_->SetServiceStatus(SERVICE_STOPPED, ERROR_SERVICE_SPECIFIC_ERROR, result);
+  }
+  return result;
 }
 
 bool BrokerService::RunService(BrokerService* service)
@@ -100,7 +104,7 @@ BrokerService::BrokerService(const wchar_t* service_name) : name_(service_name)
   status_.dwWaitHint = 0;
 }
 
-void BrokerService::Start(DWORD dwArgc, PWSTR* pszArgv)
+void BrokerService::Start(DWORD /*dwArgc*/, PWSTR* /*pszArgv*/)
 {
   try
   {
@@ -186,15 +190,16 @@ void BrokerService::Shutdown()
   }
 }
 
-void BrokerService::SetServiceStatus(DWORD current_state, DWORD exit_code, DWORD wait_hint)
+void BrokerService::SetServiceStatus(DWORD current_state, DWORD win32_error, DWORD service_specific_error)
 {
   static DWORD check_point = 1;
 
   // Fill in the SERVICE_STATUS structure of the service.
 
   status_.dwCurrentState = current_state;
-  status_.dwWin32ExitCode = exit_code;
-  status_.dwWaitHint = wait_hint;
+  status_.dwWin32ExitCode = win32_error;
+  status_.dwServiceSpecificExitCode = service_specific_error;
+  status_.dwWaitHint = 0;
 
   status_.dwCheckPoint = ((current_state == SERVICE_RUNNING) || (current_state == SERVICE_STOPPED)) ? 0 : check_point++;
 

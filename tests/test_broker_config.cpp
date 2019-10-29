@@ -20,8 +20,9 @@
 #include "broker_config.h"
 
 #include <algorithm>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
+#include <utility>
 #include "gtest/gtest.h"
 
 class TestBrokerConfig : public testing::Test
@@ -91,6 +92,8 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
                                               return std::move(a) + ", \"" + b.ToString() + "\"";
                                             }) + R"( ],
 
+      "log_level": "err",
+
       "max_connections": )" + std::to_string(kMaxConnections) + R"(,
       "max_controllers": )" + std::to_string(kMaxControllers) + R"(,
       "max_controller_messages": )" + std::to_string(kMaxControllerMessages) + R"(,
@@ -118,6 +121,8 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
   EXPECT_EQ(config_.settings.listen_port, kListenPort);
   EXPECT_EQ(config_.settings.listen_macs, kListenMacs);
   EXPECT_EQ(config_.settings.listen_addrs, kListenAddrs);
+
+  EXPECT_EQ(config_.log_mask, ETCPAL_LOG_UPTO(ETCPAL_LOG_ERR));
 
   EXPECT_EQ(config_.settings.max_connections, kMaxConnections);
   EXPECT_EQ(config_.settings.max_controllers, kMaxControllers);
@@ -454,26 +459,20 @@ TEST_F(TestBrokerConfig, InvalidListenPortShouldFail)
 
 TEST_F(TestBrokerConfig, ValidListenPortParsedCorrectly)
 {
-  struct ValidInput
-  {
-    std::string config_string;
-    uint16_t value;
-  };
   // clang-format off
-  const std::vector<ValidInput> kValidPortStrings =
+  const std::vector<std::pair<std::string, uint16_t>> kValidPortStrings =
   {
-    { R"( { "listen_port": 1024 } )", 1024 },
-    { R"( { "listen_port": 8888 } )", 8888 },
-    { R"( { "listen_port": 65535 } )", 65535 }
+    { R"( { "listen_port": 1024 } )", static_cast<uint16_t>(1024) },
+    { R"( { "listen_port": 8888 } )", static_cast<uint16_t>(8888) },
+    { R"( { "listen_port": 65535 } )", static_cast<uint16_t>(65535) }
   };
   // clang-format on
 
   for (const auto& valid_input : kValidPortStrings)
   {
-    std::istringstream test_stream(valid_input.config_string);
-    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk)
-        << "Input tested: " << valid_input.config_string;
-    EXPECT_EQ(config_.settings.listen_port, valid_input.value);
+    std::istringstream test_stream(valid_input.first);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk) << "Input tested: " << valid_input.first;
+    EXPECT_EQ(config_.settings.listen_port, valid_input.second);
   }
 }
 
@@ -565,6 +564,49 @@ TEST_F(TestBrokerConfig, ValidIpAddrListParsedSuccessfully)
   EXPECT_EQ(config_.settings.listen_addrs, kTestAddrList);
 }
 
+TEST_F(TestBrokerConfig, InvalidLogLevelShouldFail)
+{
+  // clang-format off
+  const std::vector<std::string> kInvalidStrings =
+  {
+    // Invalid types
+    R"( { "log_level": 0 } )",
+    R"( { "log_level": false } )",
+    R"( { "log_level": true } )",
+    R"( { "log_level": {} } )",
+    R"( { "log_level": [] } )",
+    // Invalid values
+    R"( { "log_level": "blah" } )",
+    R"( { "log_level": "" } )",
+  };
+  // clang-format on
+
+  for (const auto& invalid_input : kInvalidStrings)
+  {
+    std::istringstream test_stream(invalid_input);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kInvalidSetting)
+        << "Input tested: " << invalid_input;
+  }
+}
+
+TEST_F(TestBrokerConfig, ValidLogLevelParsedCorrectly)
+{
+  // clang-format off
+  const std::vector<std::pair<std::string, int>> kValidLogLevelStrings =
+  {
+    { R"( { "log_level": "emerg" } )", ETCPAL_LOG_UPTO(ETCPAL_LOG_EMERG) },
+    { R"( { "log_level": "debug" } )", ETCPAL_LOG_UPTO(ETCPAL_LOG_DEBUG) },
+  };
+  // clang-format on
+
+  for (const auto& valid_input : kValidLogLevelStrings)
+  {
+    std::istringstream test_stream(valid_input.first);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk) << "Input tested: " << valid_input.first;
+    EXPECT_EQ(config_.log_mask, valid_input.second);
+  }
+}
+
 void TestBrokerConfig::TestInvalidUnsignedIntValueHelper(const std::string& key)
 {
   // clang-format off
@@ -594,14 +636,8 @@ void TestBrokerConfig::TestInvalidUnsignedIntValueHelper(const std::string& key)
 void TestBrokerConfig::TestValidUnsignedIntValueHelper(
     const std::string& key, std::function<unsigned int(const rdmnet::BrokerSettings&)> value_getter)
 {
-  struct ValidInput
-  {
-    std::string config_string;
-    unsigned int value;
-  };
-
   // clang-format off
-  const std::vector<ValidInput> kValidIntStrings = {
+  const std::vector<std::pair<std::string, unsigned int>> kValidIntStrings = {
     { R"( { ")" + key + R"(": 0 })", 0 },
     { R"( { ")" + key + R"(": 1000 })", 1000 },
     {
@@ -613,11 +649,9 @@ void TestBrokerConfig::TestValidUnsignedIntValueHelper(
 
   for (const auto& valid_input : kValidIntStrings)
   {
-    std::istringstream test_stream(valid_input.config_string);
-    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk)
-        << "Input tested: " << valid_input.config_string;
-
-    EXPECT_EQ(value_getter(config_.settings), valid_input.value);
+    std::istringstream test_stream(valid_input.first);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk) << "Input tested: " << valid_input.first;
+    EXPECT_EQ(value_getter(config_.settings), valid_input.second);
   }
 }
 

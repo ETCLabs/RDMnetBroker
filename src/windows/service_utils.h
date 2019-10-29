@@ -20,13 +20,17 @@
 /// \file windows/service_utils.h
 /// \brief Windows NT Service utility functions
 
-#ifndef _SERVICE_UTILS_H_
-#define _SERVICE_UTILS_H_
+#ifndef SERVICE_UTILS_H_
+#define SERVICE_UTILS_H_
+
+#include <winsock2.h>
+#include <windows.h>
 
 void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size);
+void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size);
 
 void InstallService(const wchar_t* service_name, const wchar_t* display_name, DWORD start_type,
                     const wchar_t* dependencies);
 void UninstallService(const wchar_t* service_name);
 
-#endif  // _SERVICE_UTILS_H_
+#endif  // SERVICE_UTILS_H_

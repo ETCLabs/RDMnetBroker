@@ -17,8 +17,8 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#ifndef _BROKER_SHELL_H_
-#define _BROKER_SHELL_H_
+#ifndef BROKER_SHELL_H_
+#define BROKER_SHELL_H_
 
 #include <string>
 #include <vector>
@@ -28,6 +28,7 @@
 #include "etcpal/log.h"
 #include "rdmnet/broker.h"
 #include "broker_config.h"
+#include "broker_os_interface.h"
 
 // BrokerShell : Platform-neutral wrapper around the Broker library from a generic console
 // application. Instantiates and drives the Broker library.
@@ -35,26 +36,31 @@
 class BrokerShell : public rdmnet::BrokerNotify
 {
 public:
-  void Run(rdmnet::BrokerLog* log, bool debug_mode = false);
+  BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface) {}
+  bool Run(bool debug_mode = false);
 
   void NetworkChanged();
   void AsyncShutdown();
 
 private:
-  void HandleScopeChanged(const std::string& new_scope) override;
-  void PrintWarningMessage();
-
-  void ApplySettingsChanges(rdmnet::BrokerSettings& settings);
-
+  BrokerOsInterface& os_interface_;
   rdmnet::Broker broker_;
+  rdmnet::BrokerLog log_;
 
   BrokerConfig broker_config_;
-  rdmnet::BrokerLog* log_{nullptr};
 
   // Handle changes at runtime
   std::atomic<bool> restart_requested_{false};
   bool shutdown_requested_{false};
   std::string new_scope_;
+
+  bool OpenLogFile();
+  bool LoadBrokerConfig();
+
+  void HandleScopeChanged(const std::string& new_scope) override;
+  void PrintWarningMessage();
+
+  void ApplySettingsChanges(rdmnet::BrokerSettings& settings);
 };
 
-#endif  // _BROKER_SHELL_H_
+#endif  // BROKER_SHELL_H_
