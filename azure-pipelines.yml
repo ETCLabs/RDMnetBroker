@@ -33,10 +33,12 @@ stages:
         Win32:
           cmake_generator: 'Visual Studio 15 2017'
           artifact_type: x86
+          vcvarsall_platform: x86
 # We are currently only building 32-bit broker services
 #        x64:
-#          CMAKE_GENERATOR: 'Visual Studio 15 2017 Win64'
-#          ARTIFACT_TYPE: x64
+#          cmake_generator: 'Visual Studio 15 2017 Win64'
+#          artifact_type: x64
+#          vcvarsall_platform: amd64
     steps:
       - script: |
           cd $(Build.SourcesDirectory)
@@ -79,16 +81,16 @@ stages:
       - template: tools/ci/azure_templates/initialize_artifact_version.yml
       - script: |
           cd $(Build.SourcesDirectory)\tools\install\windows
-          copy %BROKER_INSTALLER_ARTIFACT% RDMnetBroker.msi
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %VCVARSALL_PLATFORM%
+          copy $(broker_installer_artifact) RDMnetBroker.msi
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" $(vcvarsall_platform)
           signtool.exe sign /v /a /tr "http://timestamp.digicert.com" /td sha256 /fd sha256 /f $(codeSignCertWindows.secureFilePath) /p $(codesign_cert_secret) RDMnetBroker.msi > NUL
-          copy RDMnetBroker.msi $(Build.ArtifactStagingDirectory)\RDMnetBroker_%RDMNET_ARTIFACT_VERSION%_%ARTIFACT_TYPE%.msi
-          copy %BROKER_MERGE_ARTIFACT% $(Build.ArtifactStagingDirectory)\RDMnetBroker_%RDMNET_ARTIFACT_VERSION%_%ARTIFACT_TYPE%.msm
+          copy RDMnetBroker.msi $(Build.ArtifactStagingDirectory)\RDMnetBroker_$(broker_artifact_version)_$(artifact_type).msi
+          copy $(broker_merge_artifact) $(Build.ArtifactStagingDirectory)\RDMnetBroker_$(broker_artifact_version)_$(artifact_type).msm
         displayName: 'Sign Broker Installer'
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-          artifactName: 'broker_windows_$(WinArtifactType)'
+          artifactName: 'broker_windows_$(artifact_type)'
   # Build and test RDMnetBroker on macOS using CMake and Clang.
   - job: macos_build_and_test
     displayName: 'macOS'
@@ -126,15 +128,15 @@ stages:
     - script: |
         cd tools/version
         version=$(<current_version.txt)
-        echo "##vso[task.setvariable variable=RDMnetVersion]$version"
+        echo "##vso[task.setvariable variable=BrokerVersion]$version"
       displayName: 'Obtain Broker Version'
     - template: tools/ci/azure_templates/deploy_artifact.yml
       parameters:
         artifactName: broker_installer_windows_x86
-        artifactFile: RDMnetBroker_$(RDMnetVersion)_x86.msi
-        artifactVersion: $(RDMnetVersion)
+        artifactFile: RDMnetBroker_$(BrokerVersion)_x86.msi
+        artifactVersion: $(BrokerVersion)
     - template: tools/ci/azure_templates/deploy_artifact.yml
       parameters:
         artifactName: broker_merge_module_windows_x86
-        artifactFile: RDMnetBroker_$(RDMnetVersion)_x86.msm
-        artifactVersion: $(RDMnetVersion)
+        artifactFile: RDMnetBroker_$(BrokerVersion)_x86.msm
+        artifactVersion: $(BrokerVersion)
