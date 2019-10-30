@@ -17,7 +17,7 @@ pr:
 variables:
   broker_artifact_version: 'not_initialized'
   broker_installer_artifact: standalone\bin\Release\EtcRdmnetBroker.msi
-  broker_merge_artifact: merge\bin\Release\EtcRdmnetBroker.msi
+  broker_merge_artifact: merge\bin\Release\EtcRdmnetBroker.msm
 
 stages:
 - stage: build_and_test
