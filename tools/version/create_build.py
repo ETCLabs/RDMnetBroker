@@ -31,7 +31,7 @@ FILE_IN_PATHS = [
 FILE_OUT_PATHS = [
     os.path.join('src', 'windows', 'broker_version_res.h'),
     os.path.join('src', 'core', 'broker_version.h'),
-    os.path.join('tools', 'version', 'current_version.txt')
+    os.path.join('tools', 'version', 'current_version.txt'),
     os.path.join('tools', 'install', 'windows', 'vars.wxi'),
 ]
 COMMIT_MSG_TEMPLATE = 'Update version files for ' + PRODUCT_NAME + ' build {}'
