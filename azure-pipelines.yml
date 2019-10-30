@@ -131,11 +131,11 @@ stages:
       displayName: 'Obtain Broker Version'
     - template: tools/ci/azure_templates/deploy_artifact.yml
       parameters:
-        artifactName: broker_installer_windows_x86
+        artifactName: broker_windows_x86
         artifactFile: RDMnetBroker_$(BrokerVersion)_x86.msi
         artifactVersion: $(BrokerVersion)
     - template: tools/ci/azure_templates/deploy_artifact.yml
       parameters:
-        artifactName: broker_merge_module_windows_x86
+        artifactName: broker_windows_x86
         artifactFile: RDMnetBroker_$(BrokerVersion)_x86.msm
         artifactVersion: $(BrokerVersion)
