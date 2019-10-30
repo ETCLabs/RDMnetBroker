@@ -38,6 +38,7 @@ public:
   int Debug() { return (broker_shell_.Run(true) ? 0 : 1); }
 
   void SetServiceStatus(DWORD current_state, DWORD win32_error = NO_ERROR, DWORD service_specific_error = 0);
+  void PrintVersion() { broker_shell_.PrintVersion(); }
 
   BrokerService(const wchar_t* service_name);
 

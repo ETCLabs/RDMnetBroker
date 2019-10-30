@@ -42,6 +42,8 @@ public:
   void NetworkChanged();
   void AsyncShutdown();
 
+  void PrintVersion();
+
 private:
   BrokerOsInterface& os_interface_;
   rdmnet::Broker broker_;

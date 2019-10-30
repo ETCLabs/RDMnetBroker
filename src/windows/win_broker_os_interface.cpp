@@ -26,6 +26,7 @@
 #include <ShlObj.h>
 #include <datetimeapi.h>
 #include "service_utils.h"
+#include "broker_version.h"
 
 constexpr const WCHAR kRelativeConfFileName[] = L"\\ETC\\RDMnetBroker\\broker.conf";
 static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetBroker"};
@@ -120,9 +121,10 @@ bool WindowsBrokerOsInterface::OpenLogFile()
   // Write an initial message to the log file
   EtcPalLogTimeParams time;
   GetLogTime(time);
-  char initial_msg[100];
-  _snprintf_s<100>(initial_msg, _TRUNCATE, "Starting RDMnet Broker Service on %04d-%02d-%02d at %02d:%02d:%02d...\n",
-                   time.year, time.month, time.day, time.hour, time.minute, time.second);
+  char initial_msg[512];
+  _snprintf_s<512>(
+      initial_msg, _TRUNCATE, "Starting RDMnet Broker Service version %s on %04d-%02d-%02d at %02d:%02d:%02d...\n",
+      BrokerVersion::VersionString().c_str(), time.year, time.month, time.day, time.hour, time.minute, time.second);
   fwrite(initial_msg, sizeof(char), strnlen_s(initial_msg, 100), log_file_);
 
   // Write an error message to the log file if it is open and there was an error rotating the logs
