@@ -31,16 +31,10 @@
           DiskId="1" Language="0" />
     </Directory>
 
-    <Feature Id="VcRedistx86Feature" Title="Visual C++ 32-bit Runtime" AllowAdvertise="no"
-        Display="hidden" Level="1">
-      <MergeRef Id="VcRedistx86" />
-    </Feature>
-    <Feature Id="mDNSResponderFeature" Title="DNS-SD Service" AllowAdvertise="no" Display="hidden"
-        Level="1">
-      <MergeRef Id="mDNSResponder" />
-    </Feature>
     <Feature Id="BrokerFeature" Title="RDMnet Broker Service $(var.VersionNumber)"
         AllowAdvertise="no" Display="hidden" Level="1">
+      <MergeRef Id="VcRedistx86" />
+      <MergeRef Id="mDNSResponder" />
       <MergeRef Id="EtcRdmnetBroker" />
     </Feature>
 
