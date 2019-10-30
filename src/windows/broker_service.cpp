@@ -23,12 +23,40 @@
 
 BrokerService* BrokerService::service_{nullptr};
 
+// The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
+// event is passed along to the BrokerShell instance, which restarts the broker.
+VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID CallerContext, IN PMIB_IPINTERFACE_ROW Row,
+                                                          IN MIB_NOTIFICATION_TYPE NotificationType)
+{
+  (void)CallerContext;
+  (void)Row;
+  (void)NotificationType;
+
+  if (service_)
+  {
+    service_->broker_shell_.NetworkChanged();
+  }
+}
+
 DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 {
-  DWORD result = service_->Run();
-  if (result != 0)
+  DWORD result = 1;
+  if (service_)
   {
-    service_->SetServiceStatus(SERVICE_STOPPED, ERROR_SERVICE_SPECIFIC_ERROR, result);
+    // Register with Windows for network change detection
+    HANDLE change_notif_handle = nullptr;
+    NotifyIpInterfaceChange(AF_UNSPEC, InterfaceChangeCallback, nullptr, FALSE, &change_notif_handle);
+
+    if (service_->broker_shell_.Run())
+      result = 0;
+
+    // Cancel network change detection
+    CancelMibChangeNotify2(change_notif_handle);
+
+    if (result != 0)
+    {
+      service_->SetServiceStatus(SERVICE_STOPPED, ERROR_SERVICE_SPECIFIC_ERROR, result);
+    }
   }
   return result;
 }

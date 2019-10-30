@@ -121,7 +121,7 @@ bool WindowsBrokerOsInterface::OpenLogFile()
   EtcPalLogTimeParams time;
   GetLogTime(time);
   char initial_msg[100];
-  _snprintf_s<100>(initial_msg, _TRUNCATE, "Starting RDMnet Broker Service on %04d:%02d:%02d at %02d:%02d:%02d...\n",
+  _snprintf_s<100>(initial_msg, _TRUNCATE, "Starting RDMnet Broker Service on %04d-%02d-%02d at %02d:%02d:%02d...\n",
                    time.year, time.month, time.day, time.hour, time.minute, time.second);
   fwrite(initial_msg, sizeof(char), strnlen_s(initial_msg, 100), log_file_);
 
