@@ -1,4 +1,12 @@
-<!-- File to define build variables for the mDNSWindows Merge Module project. -->
+<!-- File to define build variables for the RDMnetBroker Installer projects. -->
+
+<!--
+############################ IMPORTANT ############################
+If you make changes to this file, you must make a new copy of it in
+tools/version/templates/vars.wxi.in
+###################################################################
+-->
+
 <Include>
   <?define VersionNumber = "0.1.0.1" ?>
 

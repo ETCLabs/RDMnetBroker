@@ -23,7 +23,7 @@
 #include <cstring>
 #include "etcpal/netint.h"
 #include "etcpal/thread.h"
-#include "rdmnet/version.h"
+#include "broker_version.h"
 
 bool BrokerShell::Run(bool /*debug_mode*/)
 {
@@ -74,6 +74,29 @@ bool BrokerShell::Run(bool /*debug_mode*/)
   return true;
 }
 
+void BrokerShell::NetworkChanged()
+{
+  log_.Info("Network change detected, restarting broker and applying changes");
+  restart_requested_ = true;
+}
+
+void BrokerShell::AsyncShutdown()
+{
+  log_.Info("Shutdown requested, Broker shutting down...");
+  shutdown_requested_ = true;
+}
+
+void BrokerShell::PrintVersion()
+{
+  std::cout << BrokerVersion::ProductNameString() << '\n';
+  std::cout << "Version " << BrokerVersion::VersionString() << ", built " << BrokerVersion::BuildDateString() << "\n\n";
+  std::cout << BrokerVersion::CopyrightString() << '\n';
+  std::cout << "License: Apache License v2.0 <http://www.apache.org/licenses/LICENSE-2.0>\n";
+  std::cout << "Unless required by applicable law or agreed to in writing, this software is\n";
+  std::cout << "provided \"AS IS\", WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express\n";
+  std::cout << "or implied.\n";
+}
+
 bool BrokerShell::OpenLogFile()
 {
   if (!os_interface_.OpenLogFile())
@@ -117,18 +140,6 @@ void BrokerShell::HandleScopeChanged(const std::string& new_scope)
   log_.Info("Scope change detected, restarting broker and applying changes");
   new_scope_ = new_scope;
   restart_requested_ = true;
-}
-
-void BrokerShell::NetworkChanged()
-{
-  log_.Info("Network change detected, restarting broker and applying changes");
-  restart_requested_ = true;
-}
-
-void BrokerShell::AsyncShutdown()
-{
-  log_.Info("Shutdown requested, Broker shutting down...");
-  shutdown_requested_ = true;
 }
 
 void BrokerShell::ApplySettingsChanges(rdmnet::BrokerSettings& settings)

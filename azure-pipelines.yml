@@ -13,6 +13,11 @@ trigger:
 pr:
 - develop
 
+variables:
+  broker_artifact_version: 'not_initialized'
+  broker_installer_artifact: standalone\bin\Release\EtcRdmnetBroker.msi
+  broker_merge_artifact: merge\bin\Release\EtcRdmnetBroker.msm
+
 stages:
 - stage: build_and_test
   displayName: 'Build and Test RDMnet Broker'
@@ -24,19 +29,22 @@ stages:
       vmImage: 'vs2017-win2016'
     strategy:
       matrix:
-#        Win32:
-#          CMAKE_GENERATOR: 'Visual Studio 15 2017'
-#          ARTIFACT_TYPE: x86
-        x64:
-          CMAKE_GENERATOR: 'Visual Studio 15 2017 Win64'
-          ARTIFACT_TYPE: x64
+        Win32:
+          cmake_generator: 'Visual Studio 15 2017'
+          artifact_type: x86
+          vcvarsall_platform: x86
+# We are currently only building 32-bit broker services
+#        x64:
+#          cmake_generator: 'Visual Studio 15 2017 Win64'
+#          artifact_type: x64
+#          vcvarsall_platform: amd64
     steps:
       - script: |
           cd $(Build.SourcesDirectory)
           mkdir build
           cd build
           cmake --version
-          cmake -G "%CMAKE_GENERATOR%" ..
+          cmake -G "%CMAKE_GENERATOR%" -DCMAKE_INSTALL_PREFIX=install ..
         displayName: 'Configure Project'
       - task: VSBuild@1
         displayName: 'Build Project'
@@ -53,6 +61,36 @@ stages:
           testResultsFormat: 'CTest'
           testResultsFiles: '**/Test.xml'
           failTaskOnFailedTests: true
+      - script: |
+          cd $(Build.SourcesDirectory)\build
+          cmake -P cmake_install.cmake
+        displayName: 'Install Project Artifacts'
+      - task: VSBuild@1
+        displayName: 'Build Windows Installer'
+        inputs:
+          solution: $(Build.SourcesDirectory)\tools\install\windows\BrokerInstall.sln
+          platform: $(artifact_type)
+          configuration: Release
+          msbuildArguments: /p:RunWixToolsOutOfProc=true
+      - task: DownloadSecureFile@1
+        name: codeSignCertWindows
+        displayName: 'Download Code Signing Certificate'
+        inputs:
+          secureFile: 'codesign_cert_windows.pfx'
+      - template: tools/ci/azure_templates/initialize_artifact_version.yml
+      - script: |
+          cd $(Build.SourcesDirectory)\tools\install\windows
+          copy $(broker_installer_artifact) RDMnetBroker.msi
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" $(vcvarsall_platform)
+          signtool.exe sign /v /a /tr "http://timestamp.digicert.com" /td sha256 /fd sha256 /f $(codeSignCertWindows.secureFilePath) /p $(codesign_cert_secret) RDMnetBroker.msi > NUL
+          copy RDMnetBroker.msi $(Build.ArtifactStagingDirectory)\RDMnetBroker_$(broker_artifact_version)_$(artifact_type).msi
+          copy $(broker_merge_artifact) $(Build.ArtifactStagingDirectory)\RDMnetBroker_$(broker_artifact_version)_$(artifact_type).msm
+        displayName: 'Sign Broker Installer'
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          artifactName: 'broker_windows_$(artifact_type)'
+  # Build and test RDMnetBroker on macOS using CMake and Clang.
   - job: macos_build_and_test
     displayName: 'macOS'
     pool:
@@ -76,3 +114,28 @@ stages:
           testResultsFormat: 'CTest'
           testResultsFiles: '**/Test.xml'
           failTaskOnFailedTests: true
+
+- stage: deploy_binaries
+  displayName: 'Deploy Broker Binaries'
+  condition: and(succeeded('build_and_test'), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+  jobs:
+  - job: bintray_deploy
+    displayName: 'BinTray Deploy'
+    pool:
+      vmImage: 'ubuntu-16.04'
+    steps:
+    - script: |
+        cd tools/version
+        version=$(<current_version.txt)
+        echo "##vso[task.setvariable variable=BrokerVersion]$version"
+      displayName: 'Obtain Broker Version'
+    - template: tools/ci/azure_templates/deploy_artifact.yml
+      parameters:
+        artifactName: broker_windows_x86
+        artifactFile: RDMnetBroker_$(BrokerVersion)_x86.msi
+        artifactVersion: $(BrokerVersion)
+    - template: tools/ci/azure_templates/deploy_artifact.yml
+      parameters:
+        artifactName: broker_windows_x86
+        artifactFile: RDMnetBroker_$(BrokerVersion)_x86.msm
+        artifactVersion: $(BrokerVersion)

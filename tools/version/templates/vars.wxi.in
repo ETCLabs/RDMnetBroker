@@ -1,0 +1,22 @@
+<!-- File to define build variables for the RDMnetBroker Installer projects. -->
+
+<!--
+############################ IMPORTANT ############################
+If you make changes to this file, you must make a new copy of it in
+tools/version/templates/vars.wxi.in
+###################################################################
+-->
+
+<Include>
+  <?define VersionNumber = "@BROKER_VERSION_STRING@" ?>
+
+  <?if $(var.Platform) = x64 ?>
+    <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
+    <?define MergeDescription = "ETC RDMnet Broker Service 64-bit Merge Module" ?>
+    <?define ProductDescription = "ETC RDMnet Broker Service 64-bit Installer" ?>
+  <?else ?>
+    <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
+    <?define MergeDescription = "ETC RDMnet Broker Service 32-bit Merge Module" ?>
+    <?define ProductDescription = "ETC RDMnet Broker Service 32-bit Installer" ?>
+  <?endif ?>
+</Include>
