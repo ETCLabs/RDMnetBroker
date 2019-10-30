@@ -64,12 +64,13 @@ stages:
           cd $(Build.SourcesDirectory)\build
           cmake -P cmake_install.cmake
         displayName: 'Install Project Artifacts'
-      - task: MSBuild@1
+      - task: VSBuild@1
+        displayName: 'Build Windows Installer'
         inputs:
           solution: $(Build.SourcesDirectory)\tools\install\windows\BrokerInstall.sln
-          platform: $(WinArtifactType)
+          platform: $(artifact_type)
+          configuration: Release
           msbuildArguments: /p:RunWixToolsOutOfProc=true
-        displayName: 'Build Windows Installer'
       - task: DownloadSecureFile@1
         name: codeSignCertWindows
         displayName: 'Download Code Signing Certificate'
