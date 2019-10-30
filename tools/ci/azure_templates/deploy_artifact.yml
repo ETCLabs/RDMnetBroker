@@ -18,5 +18,5 @@ steps:
       authType: 'UserAndPass'
       username: 'svc-etclabs'
       password: '$(svc-etclabs_bintray_api_key)'
-      url: 'https://api.bintray.com/content/etclabs/rdmnet_bin/latest/${{ parameters.artifactVersion }}/${{ parameters.artifactFile }}'
+      url: 'https://api.bintray.com/content/etclabs/rdmnet_broker_bin/latest/${{ parameters.artifactVersion }}/${{ parameters.artifactFile }}'
       options: '-G -d publish=0'
