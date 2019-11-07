@@ -29,8 +29,7 @@
 void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size);
 void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size);
 
-void InstallService(const wchar_t* service_name, const wchar_t* display_name, const wchar_t* description,
-                    DWORD start_type, const wchar_t* dependencies);
-void UninstallService(const wchar_t* service_name);
+void InstallService();
+void UninstallService();
 
 #endif  // SERVICE_UTILS_H_
