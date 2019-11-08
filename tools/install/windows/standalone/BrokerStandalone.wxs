@@ -48,5 +48,6 @@
     </Feature>
 
     <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+    <UIRef Id="WixUI_Minimal" />
   </Product>
 </Wix>
