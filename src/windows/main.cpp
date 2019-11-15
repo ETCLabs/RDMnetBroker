@@ -23,16 +23,10 @@
 #include <cstdio>
 #include <winsock2.h>
 #include <windows.h>
+#include "service_config.h"
 #include "service_utils.h"
 #include "broker_service.h"
 #include "broker_version.h"
-
-constexpr wchar_t kServiceName[] = L"ETC RDMnet Broker";         // Internal name of the service
-constexpr wchar_t kServiceDisplayName[] = L"ETC RDMnet Broker";  // Displayed name of the service
-constexpr wchar_t kServiceDescription[] =
-    L"Implements an RDMnet message broker as defined in ANSI E1.33";  // Displayed description of the services
-constexpr int kServiceStartType = SERVICE_AUTO_START;                 // Service start options.
-constexpr wchar_t kServiceDependencies[] = L"";                       // List of service dependencies - "dep1\0dep2\0\0"
 
 void PrintVersion()
 {
@@ -71,12 +65,12 @@ int wmain(int argc, wchar_t* argv[])
     }
     if (_wcsicmp(L"-install", argv[1]) == 0)
     {
-      InstallService(kServiceName, kServiceDisplayName, kServiceDescription, kServiceStartType, kServiceDependencies);
+      InstallService();
       return 0;
     }
     else if (_wcsicmp(L"-remove", argv[1]) == 0)
     {
-      UninstallService(kServiceName);
+      UninstallService();
       return 0;
     }
     else if (_wcsicmp(L"-debug", argv[1]) == 0)

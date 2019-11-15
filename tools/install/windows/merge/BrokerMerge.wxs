@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-     xmlns:fire="http://schemas.microsoft.com/wix/FirewallExtension">
+     xmlns:fire="http://schemas.microsoft.com/wix/FirewallExtension"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
   <?include ..\vars.wxi ?>
 
@@ -17,7 +18,7 @@
       <Directory Id="$(var.ProgramFilesFolder)">
         <Directory Id="PROGRAM_FILES_ETC_DIR" Name="ETC">
           <Directory Id="INSTALLDIR" Name="RDMnetBroker" FileSource="$(var.InstallSourceDir)">
-            <Component Id="Broker" Guid="2B4014E4-5278-469A-ABA7-A94F0AB850DA" SharedDllRefCount='yes'>
+            <Component Id="Broker" Guid="2B4014E4-5278-469A-ABA7-A94F0AB850DA" SharedDllRefCount="yes">
               <File Id="BrokerExe" Name="RDMnetBrokerService.exe" DiskId="1" KeyPath="yes">
                 <!-- Create Windows Firewall exceptions for the Broker executable. -->
                 <fire:FirewallException Id="RDMnetBrokerTCP" Name="ETC RDMnet Broker (TCP-in)"
@@ -26,8 +27,9 @@
                     Profile="all" Protocol="udp" Scope="any" IgnoreFailure="no" />
               </File>
               <File Id="DnsSdDll" Name="dnssd.dll" DiskId="1" />
-              <ServiceControl Id="BrokerServiceCtl" Name="ETC RDMnet Broker" Stop="both"
-                  Start="install" />
+
+              <!-- Configures the actual installing and uninstalling of the service -->
+              <?include GeneratedFiles\service_config.wxi ?>
             </Component>
           </Directory>
         </Directory>
@@ -37,31 +39,12 @@
       <Directory Id="CommonAppDataFolder">
         <Directory Id="PROGRAM_DATA_ETC_DIR" Name="ETC">
           <Directory Id="PROGRAM_DATA_RDMNET_BROKER_DIR" Name="RDMnetBroker" FileSource="src">
-            <Component Id="BrokerConf" Guid="C24F6AF3-1DCD-4160-A604-200E78401721">
+            <Component Id="BrokerConf" Guid="C24F6AF3-1DCD-4160-A604-200E78401721" SharedDllRefCount="yes">
               <File Id="BrokerConfFile" Name="broker.conf" DiskId="1" KeyPath="yes" />
             </Component>
           </Directory>
         </Directory>
       </Directory>
     </Directory>
-
-    <!-- ######################### Custom Actions ######################### -->
-
-    <!--
-    The RDMnetBrokerService executable is invoked with the argument "-install"
-    on installation and "-remove" on uninstallation - this does the actual
-    registration and de-registration of the service with the Service Control
-    Manager.
-    -->
-    <CustomAction Id="RemoveBrokerService" FileKey="BrokerExe" ExeCommand="-remove"
-        Execute="deferred" Impersonate="no" Return="ignore" />
-    <CustomAction Id="InstallBrokerService" FileKey="BrokerExe" ExeCommand="-install"
-        Execute="deferred" Impersonate="no" Return="check" />
-      
-    <InstallExecuteSequence>
-      <Custom Action="RemoveBrokerService" After="StopServices">REMOVE="ALL"</Custom>
-      <Custom Action="InstallBrokerService" Before="StartServices">NOT REMOVE="ALL"</Custom>
-    </InstallExecuteSequence>
-
   </Module>
 </Wix>

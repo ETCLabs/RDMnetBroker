@@ -21,6 +21,7 @@
 #include <stddef.h>
 #include <string>
 #include "service_utils.h"
+#include "service_config.h"
 
 /// \brief Get the last system error code as a descriptive string.
 ///
@@ -54,16 +55,8 @@ void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size)
 ///
 /// If the function fails to install the service, the resulting error message is printed to stdout.
 ///
-/// \param[in] service_name The name of the service.
-/// \param[in] service_display_name The user-facing name that will display in the Services dialog.
-/// \param[in] description A description of the service that will display in the Services dialog.
-/// \param[in] start_type The service start option; one of SERVICE_AUTO_START, SERVICE_BOOT_START,
-///                       SERVICE_DEMAND_START, SERVICE_DISABLED, SERVICE_SYSTEM_START.
-/// \param[in] dependencies Pointer to a double null-terminated array of null-separated names of
-///                         services or load ordering groups that the system must start before this
-///                         service.
-void InstallService(const wchar_t* service_name, const wchar_t* display_name, const wchar_t* description,
-                    DWORD start_type, const wchar_t* dependencies)
+/// Uses the service parameters from the generated header service_config.h
+void InstallService()
 {
   constexpr size_t kErrMsgSize = 256;
   wchar_t error_msg[kErrMsgSize];
@@ -87,16 +80,16 @@ void InstallService(const wchar_t* service_name, const wchar_t* display_name, co
 
   // Install the service into the Service Control Manager
   SC_HANDLE service_handle = CreateService(manager_handle,                                // SCManager database
-                                           service_name,                                  // Name of service
-                                           display_name,                                  // Name to display
+                                           kServiceName,                                  // Name of service
+                                           kServiceDisplayName,                           // Name to display
                                            SERVICE_QUERY_STATUS | SERVICE_CHANGE_CONFIG,  // Desired access
                                            SERVICE_WIN32_OWN_PROCESS,                     // Service type
-                                           start_type,                                    // Service start type
-                                           SERVICE_ERROR_NORMAL,                          // Error control type
+                                           kServiceStartType,                             // Service start type
+                                           kServiceErrorControl,                          // Error control type
                                            my_file_name,                                  // Service's binary
                                            nullptr,                                       // No load ordering group
                                            nullptr,                                       // No tag identifier
-                                           dependencies,                                  // Dependencies
+                                           nullptr,                                       // Dependencies
                                            nullptr,                                       // Service running account
                                            nullptr                                        // Password of the account
   );
@@ -105,32 +98,24 @@ void InstallService(const wchar_t* service_name, const wchar_t* display_name, co
   {
     // Edit the service config
 
-    if (description)
-    {
-      // Set the service description
-      // Sigh... it's too much to ask for these APIs to be const-correct, isn't it?
-      std::wstring non_const_description = description;
-      SERVICE_DESCRIPTION service_desc;
-      service_desc.lpDescription = non_const_description.data();
-      ChangeServiceConfig2(service_handle, SERVICE_CONFIG_DESCRIPTION, &service_desc);
-    }
+    // Set the service description
+    // Sigh... it's too much to ask for these APIs to be const-correct, isn't it?
+    std::wstring non_const_description = kServiceDescription;
+    SERVICE_DESCRIPTION service_desc;
+    service_desc.lpDescription = non_const_description.data();
+    ChangeServiceConfig2(service_handle, SERVICE_CONFIG_DESCRIPTION, &service_desc);
 
     // Set the failure action - restart after 5 seconds
     SERVICE_FAILURE_ACTIONS fail_actions;
     fail_actions.dwResetPeriod = INFINITE;
     fail_actions.lpRebootMsg = NULL;
     fail_actions.lpCommand = NULL;
-    fail_actions.cActions = 1;
-
-    SC_ACTION action;
-    action.Delay = 5000;
-    action.Type = SC_ACTION_RESTART;
-
-    fail_actions.lpsaActions = &action;
+    fail_actions.cActions = static_cast<DWORD>(std::size(kServiceFailureActions));
+    fail_actions.lpsaActions = kServiceFailureActions;
 
     ChangeServiceConfig2(service_handle, SERVICE_CONFIG_FAILURE_ACTIONS, &fail_actions);
 
-    wprintf(L"%s is installed.\n", service_name);
+    wprintf(L"%s is installed.\n", kServiceName);
     CloseServiceHandle(service_handle);
   }
   else
@@ -147,8 +132,8 @@ void InstallService(const wchar_t* service_name, const wchar_t* display_name, co
 /// If the function fails to uninstall the service, the resulting error message is printed to
 /// stdout.
 ///
-/// \param[in] service_name The name of the service to be removed.
-void UninstallService(const wchar_t* service_name)
+/// Uses the service parameters from the generated header service_config.h
+void UninstallService()
 {
   constexpr size_t kErrMsgSize = 256;
   wchar_t error_msg[kErrMsgSize];
@@ -163,7 +148,7 @@ void UninstallService(const wchar_t* service_name)
   }
 
   // Open the service with delete, stop, and query status permissions
-  SC_HANDLE service_handle = OpenService(manager_handle, service_name, SERVICE_STOP | SERVICE_QUERY_STATUS | DELETE);
+  SC_HANDLE service_handle = OpenService(manager_handle, kServiceName, SERVICE_STOP | SERVICE_QUERY_STATUS | DELETE);
   if (!service_handle)
   {
     GetLastErrorMessage(error_msg, kErrMsgSize);
@@ -176,7 +161,7 @@ void UninstallService(const wchar_t* service_name)
   SERVICE_STATUS status = {};
   if (ControlService(service_handle, SERVICE_CONTROL_STOP, &status))
   {
-    wprintf(L"Stopping %s.", service_name);
+    wprintf(L"Stopping %s.", kServiceName);
     Sleep(1000);
 
     while (QueryServiceStatus(service_handle, &status))
@@ -192,18 +177,18 @@ void UninstallService(const wchar_t* service_name)
 
     if (status.dwCurrentState == SERVICE_STOPPED)
     {
-      wprintf(L"\n%s is stopped.\n", service_name);
+      wprintf(L"\n%s is stopped.\n", kServiceName);
     }
     else
     {
-      wprintf(L"\n%s failed to stop.\n", service_name);
+      wprintf(L"\n%s failed to stop.\n", kServiceName);
     }
   }
 
   // Now remove the service by calling DeleteService.
   if (DeleteService(service_handle))
   {
-    wprintf(L"%s is removed.\n", service_name);
+    wprintf(L"%s is removed.\n", kServiceName);
   }
   else
   {

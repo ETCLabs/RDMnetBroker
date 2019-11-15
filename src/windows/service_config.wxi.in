@@ -1,0 +1,22 @@
+<!-- File to define service attributes for the RDMnetBroker Windows service. -->
+<!-- Must be configured by CMake before the Broker Service installers can be built. -->
+
+<Include xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <ServiceInstall Name="@BROKER_SERVICE_NAME@"
+                  DisplayName="@BROKER_SERVICE_DISPLAY_NAME@"
+                  Description="@BROKER_SERVICE_DESCRIPTION@"
+                  Start="@BROKER_SERVICE_WIX_START_TYPE@"
+                  ErrorControl="@BROKER_SERVICE_WIX_ERROR_CONTROL@"
+                  Type="ownProcess"
+                  Vital="yes">
+    <util:ServiceConfig FirstFailureActionType="@BROKER_SERVICE_WIX_FAILURE_ACTION_1@"
+                        RestartServiceDelayInSeconds="@BROKER_SERVICE_WIX_FAILURE_ACTION_1_DELAY@" 
+                        SecondFailureActionType="none"
+                        ThirdFailureActionType="none" />
+  </ServiceInstall>
+  <ServiceControl Id="BrokerServiceCtl"
+                  Name="@BROKER_SERVICE_NAME@"
+                  Remove="uninstall"
+                  Stop="both"
+                  Start="install" />
+</Include>

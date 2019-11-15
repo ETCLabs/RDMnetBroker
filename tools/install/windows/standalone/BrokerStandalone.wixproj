@@ -15,17 +15,15 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>Debug;InstallSourceDir=$(InstallSourceDir)</DefineConstants>
-    <LinkerAdditionalOptions>
-    </LinkerAdditionalOptions>
-    <CompilerAdditionalOptions>
-    </CompilerAdditionalOptions>
-    <SuppressIces>ICE03</SuppressIces>
+    <LinkerAdditionalOptions>-ext WixUIExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixUIExtension</CompilerAdditionalOptions>
+    <SuppressIces>ICE03;ICE61</SuppressIces>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DefineConstants>InstallSourceDir=$(InstallSourceDir)</DefineConstants>
-    <CompilerAdditionalOptions />
-    <LinkerAdditionalOptions />
-    <SuppressIces>ICE03</SuppressIces>
+    <CompilerAdditionalOptions>-ext WixUIExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixUIExtension</LinkerAdditionalOptions>
+    <SuppressIces>ICE03;ICE61</SuppressIces>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BrokerStandalone.wxs" />

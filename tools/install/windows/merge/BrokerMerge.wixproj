@@ -16,13 +16,13 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>Debug;InstallSourceDir=$(InstallSourceDir)</DefineConstants>
-    <LinkerAdditionalOptions>-ext WixFirewallExtension</LinkerAdditionalOptions>
-    <CompilerAdditionalOptions>-ext WixFirewallExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixFirewallExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixFirewallExtension -ext WixUtilExtension</CompilerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DefineConstants>InstallSourceDir=$(InstallSourceDir)</DefineConstants>
-    <CompilerAdditionalOptions>-ext WixFirewallExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-ext WixFirewallExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixFirewallExtension -ext WixUtilExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixFirewallExtension -ext WixUtilExtension</LinkerAdditionalOptions>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BrokerMerge.wxs" />
