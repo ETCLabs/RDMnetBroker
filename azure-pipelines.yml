@@ -57,10 +57,10 @@ stages:
         displayName: 'Run Tests'
       - task: PublishTestResults@2
         displayName: 'Publish Test Results'
+        condition: always()
         inputs:
           testResultsFormat: 'CTest'
           testResultsFiles: '**/Test.xml'
-          failTaskOnFailedTests: true
       - script: |
           cd $(Build.SourcesDirectory)\build
           cmake -P cmake_install.cmake
@@ -71,7 +71,7 @@ stages:
           solution: $(Build.SourcesDirectory)\tools\install\windows\BrokerInstall.sln
           platform: $(artifact_type)
           configuration: Release
-          msbuildArguments: /p:RunWixToolsOutOfProc=true
+          msbuildArgs: /p:RunWixToolsOutOfProc=true
       - task: DownloadSecureFile@1
         name: codeSignCertWindows
         displayName: 'Download Code Signing Certificate'
