@@ -1,0 +1,17 @@
+{
+  "version": {
+    "fileTemplates": {
+      "tools/version/templates/broker_version_res.h.in": "src/windows/broker_version_res.h",
+      "tools/version/templates/broker_version.h.in": "src/core/broker_version.h",
+      "tools/version/templates/current_version.txt.in": "tools/version/current_version.txt",
+      "tools/version/templates/vars.wxi.in": "tools/install/windows/vars.wxi"
+    },
+    "jira": {
+      "project": "RDMNETBRKR",
+      "submoduleDeps": {
+        "json": "external/json",
+        "RDMnet": "external/RDMnet"
+      }
+    }
+  }
+}

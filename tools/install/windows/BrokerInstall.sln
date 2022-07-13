@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.168
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "BrokerMerge", "merge\BrokerMerge.wixproj", "{E897A02F-1FE9-4148-B326-32AFFDE3DF0D}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "BrokerMerge", "merge\BrokerMerge_x86.wixproj", "{E897A02F-1FE9-4148-B326-32AFFDE3DF0D}"
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "BrokerStandalone", "standalone\BrokerStandalone.wixproj", "{AC1C7276-B759-47DD-9D79-7B8BA1D73827}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "BrokerStandalone", "standalone\BrokerStandalone_x86.wixproj", "{AC1C7276-B759-47DD-9D79-7B8BA1D73827}"
 	ProjectSection(ProjectDependencies) = postProject
 		{E897A02F-1FE9-4148-B326-32AFFDE3DF0D} = {E897A02F-1FE9-4148-B326-32AFFDE3DF0D}
 	EndProjectSection

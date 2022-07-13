@@ -8,7 +8,7 @@ tools/version/templates/vars.wxi.in
 -->
 
 <Include>
-  <?define VersionNumber = "@BROKER_VERSION_STRING@" ?>
+  <?define VersionNumber = "@VERSION@" ?>
 
   <?if $(var.Platform) = x64 ?>
     <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>

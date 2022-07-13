@@ -4,28 +4,29 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>3.10</ProductVersion>
-    <ProjectGuid>e897a02f-1fe9-4148-b326-32affde3df0d</ProjectGuid>
+    <ProjectGuid>ac1c7276-b759-47dd-9d79-7b8ba1d73827</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>EtcRdmnetBroker</OutputName>
-    <OutputType>Module</OutputType>
+    <OutputName>RdmnetBroker_x86</OutputName>
+    <OutputType>Package</OutputType>
     <Name>EtcRdmnetBroker</Name>
-    <InstallSourceDir>..\..\..\..\build\install\bin</InstallSourceDir>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineSolutionProperties>false</DefineSolutionProperties>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>Debug;InstallSourceDir=$(InstallSourceDir)</DefineConstants>
-    <LinkerAdditionalOptions>-ext WixFirewallExtension -ext WixUtilExtension</LinkerAdditionalOptions>
-    <CompilerAdditionalOptions>-ext WixFirewallExtension -ext WixUtilExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixUIExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixUIExtension</CompilerAdditionalOptions>
+    <SuppressIces>ICE03;ICE61</SuppressIces>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DefineConstants>InstallSourceDir=$(InstallSourceDir)</DefineConstants>
-    <CompilerAdditionalOptions>-ext WixFirewallExtension -ext WixUtilExtension</CompilerAdditionalOptions>
-    <LinkerAdditionalOptions>-ext WixFirewallExtension -ext WixUtilExtension</LinkerAdditionalOptions>
+    <CompilerAdditionalOptions>-ext WixUIExtension</CompilerAdditionalOptions>
+    <LinkerAdditionalOptions>-ext WixUIExtension</LinkerAdditionalOptions>
+    <SuppressIces>ICE03;ICE61</SuppressIces>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="BrokerMerge.wxs" />
+    <Compile Include="BrokerStandalone.wxs" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets') " />
@@ -33,7 +34,7 @@
     <Error Text="The WiX Toolset v3.11 (or newer) build tools must be installed to build this project. To download the WiX Toolset, see http://wixtoolset.org/releases/" />
   </Target>
   <PropertyGroup>
-    <PreBuildEvent />
+    <PreBuildEvent>py $(MSBuildProjectDirectory)\find_vcredist.py "$(VSInstallRoot)"</PreBuildEvent>
   </PropertyGroup>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.

@@ -1,0 +1,83 @@
+workflow:
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
+variables:
+  GIT_STRATEGY: clone
+  GIT_SUBMODULE_STRATEGY: normal
+  GLOBAL_CMAKE_OPTIONS: -DRDMNET_BUILD_TESTS=ON -DRDMNET_BUILD_CONSOLE_EXAMPLES=ON
+  PROJECT_BOT_USER: project_1241_bot
+
+windows-build:
+  stage: build
+  tags:
+    - ct-windows
+  parallel:
+    matrix:
+      - CMAKE_GENERATOR: Visual Studio 15 2017
+        CMAKE_INSTALL: install_x86
+        VCVARSALL_PLATFORM: x86
+        ARTIFACT_TYPE: x86
+#      - CMAKE_GENERATOR: Visual Studio 15 2017 Win64
+#        CMAKE_INSTALL: install_x64
+#        VCVARSALL_PLATFORM: amd64
+#        ARTIFACT_TYPE: x64
+  script:
+    - python tools\ci\update_artifact_version.py
+    - mkdir build
+    - cd build
+    - cmake -G "$env:CMAKE_GENERATOR" "-DCMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL" $env:GLOBAL_CMAKE_OPTIONS.Split(" ") ..
+    - cmake --build . --config Release -j
+    - ctest -C Release --output-on-failure
+    - cmake -P cmake_install.cmake
+    - cd ..
+    - .\tools\ci\windows_build_artifacts.bat
+  artifacts:
+    when: always
+    paths:
+      - RDMnetBroker_$ARTIFACT_TYPE.msi
+      - RDMnetBroker_$ARTIFACT_TYPE.msm
+    reports:
+      junit: build/tests/test-results/*.xml
+
+macos-build:
+  stage: build
+  tags:
+    - ct-macos
+  script:
+    - python3 tools/ci/update_artifact_version.py
+    - mkdir build
+    - cd build
+    - cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=install ${GLOBAL_CMAKE_OPTIONS} ..
+    - make -j
+    - make install
+    - ctest --output-on-failure
+    - cd ..
+#    - python3 tools/install/macos/macos_build_package.py
+  artifacts:
+    when: always
+#    paths:
+#      - RDMnetBroker.pkg
+    reports:
+      junit: build/tests/test-results/*.xml
+
+# Deploy versioned build
+include:
+  - project: 'etc/common-tech/tools/gitlab-ci-util'
+    ref: v2.0.1
+    file: '/ci-yml/deploy-versioned-build.yml'
+
+deploy-artifacts:
+  stage: deploy
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $NEW_BUILD_VERSION =~ /^\d+\.\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_NAME == "main"'
+  tags:
+    - etc-linux-docker
+  image: etc-docker.artifactory.etcconnect.com/python:latest
+  script:
+    - pip config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
+    - pip config set global.trusted-host artifactory.etcconnect.com
+    - pip install requests etclibtool PyGithub
+    - python3 tools/ci/deploy_to_github_release.py ${NEW_BUILD_VERSION}
