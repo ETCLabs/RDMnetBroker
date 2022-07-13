@@ -1,9 +1,4 @@
 
-message(STATUS "Adding GoogleTest dependency...")
-include(AddGoogleTest)
-
-include(GoogleTest)
-
 add_executable(TestBrokerServiceCore
   test_broker_config.cpp
   test_broker_shell.cpp

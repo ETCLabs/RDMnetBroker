@@ -1,0 +1,34 @@
+{
+  "dependencies": [
+    {
+      "name": "RDMnet",
+      "gitlabPath": "etc/common-tech/net/rdmnet",
+      "version": "0.4.0.6"
+    },
+    {
+      "name": "nlohmann_json",
+      "gitlabPath": "mirrors/thirdparty/arthursonzogni/nlohmann_json_cmake_fetchcontent",
+      "version": "3.10.5",
+      "manual": true
+    },
+    {
+      "name": "googletest",
+      "gitlabPath": "mirrors/thirdparty/google/googletest",
+      "gitTag": "c9461a9b55ba954df0489bab6420eb297bed846b",
+      "devOnly": true
+    }
+  ],
+  "devToolConfig": {
+    "version": {
+      "fileTemplates": {
+        "tools/version/templates/broker_version_res.h.in": "src/windows/broker_version_res.h",
+        "tools/version/templates/broker_version.h.in": "src/core/broker_version.h",
+        "tools/version/templates/current_version.txt.in": "tools/version/current_version.txt",
+        "tools/version/templates/vars.wxi.in": "tools/install/windows/vars.wxi"
+      },
+      "jira": {
+        "project": "RDMNETBRKR"
+      }
+    }
+  }
+}

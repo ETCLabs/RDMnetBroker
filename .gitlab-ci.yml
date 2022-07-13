@@ -7,7 +7,7 @@ workflow:
 variables:
   GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: normal
-  GLOBAL_CMAKE_OPTIONS: -DRDMNET_BUILD_TESTS=ON -DRDMNET_BUILD_CONSOLE_EXAMPLES=ON
+  GLOBAL_CMAKE_OPTIONS: -DRDMNETBROKER_BUILD_TESTS=ON
   PROJECT_BOT_USER: project_1241_bot
 
 windows-build:
@@ -25,7 +25,6 @@ windows-build:
 #        VCVARSALL_PLATFORM: amd64
 #        ARTIFACT_TYPE: x64
   script:
-    - python tools\ci\update_artifact_version.py
     - mkdir build
     - cd build
     - cmake -G "$env:CMAKE_GENERATOR" "-DCMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL" $env:GLOBAL_CMAKE_OPTIONS.Split(" ") ..
@@ -47,7 +46,6 @@ macos-build:
   tags:
     - ct-macos
   script:
-    - python3 tools/ci/update_artifact_version.py
     - mkdir build
     - cd build
     - cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=install ${GLOBAL_CMAKE_OPTIONS} ..
@@ -77,7 +75,5 @@ deploy-artifacts:
     - etc-linux-docker
   image: etc-docker.artifactory.etcconnect.com/python:latest
   script:
-    - pip config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
-    - pip config set global.trusted-host artifactory.etcconnect.com
-    - pip install requests etclibtool PyGithub
+    - pip install requests PyGithub
     - python3 tools/ci/deploy_to_github_release.py ${NEW_BUILD_VERSION}

@@ -1,36 +1,37 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 
 project(RDMnetBroker VERSION 0.1.0)
 
-if(MSVC)
-  add_compile_options(/W4)
-elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  add_compile_options(-Wall -Wconversion)
-  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    add_compile_options(-Wno-sign-conversion)
-  else()
-    add_compile_options(-Wno-sign-compare)
-  endif()
-endif()
+###################### Compile Options and Configuration ######################
 
 if(WIN32)
   add_compile_definitions(NOMINMAX)
 endif()
 
-# Allow folder grouping in generated IDE projects
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+option(RDMNETBROKER_BUILD_TESTS "Build the RDMnet Broker unit tests" OFF)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/cmake)
-set(BROKER_ROOT ${CMAKE_CURRENT_LIST_DIR})
+set(RDMNETBROKER_CMAKE ${CMAKE_CURRENT_LIST_DIR}/tools/cmake)
+set(RDMNETBROKER_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
-# Add our RDMnet source dependency
-include(BrokerAddDependency)
-broker_add_dependency(RDMnet RDMNET_DIR)
-set_target_properties(RDMnetBroker PROPERTIES FOLDER dependencies)
+################################# Dependencies ################################
 
-# Add the JSON 3rd-party library
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/external/json)
-find_package(nlohmann_json 3.7.0 REQUIRED)
+include(${RDMNETBROKER_CMAKE}/OssDependencyTools.cmake)
+determine_compile_environment()
+if(NOT COMPILING_AS_OSS)
+  include(${RDMNETBROKER_CMAKE}/AddCMakeTools.cmake)
+endif()
+include(${RDMNETBROKER_CMAKE}/ResolveDependencies.cmake)
+
+############################## Standalone support #############################
+
+if(NOT COMPILING_AS_OSS)
+  include(${CMAKE_TOOLS_MODULES}/QualityGateHelpers.cmake)
+
+  setup_standalone_compile()
+  setup_clang_format()
+  # TODO: setup_clang_tidy()
+  setup_address_sanitizer()
+endif()
 
 ################################### Main app ##################################
 
@@ -38,7 +39,8 @@ add_subdirectory(src)
 
 #################################### Tests ####################################
 
-set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1) # Hack to prevent CTest added targets
-include(CTest)
-enable_testing()
-add_subdirectory(tests)
+if(RDMNETBROKER_BUILD_TESTS)
+  include(GoogleTest)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
