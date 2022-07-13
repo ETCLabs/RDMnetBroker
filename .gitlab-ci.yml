@@ -7,7 +7,6 @@ workflow:
 variables:
   GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: normal
-  GLOBAL_CMAKE_OPTIONS: -DRDMNET_BUILD_TESTS=ON -DRDMNET_BUILD_CONSOLE_EXAMPLES=ON
   PROJECT_BOT_USER: project_1241_bot
 
 windows-build:
@@ -28,7 +27,7 @@ windows-build:
     - python tools\ci\update_artifact_version.py
     - mkdir build
     - cd build
-    - cmake -G "$env:CMAKE_GENERATOR" "-DCMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL" $env:GLOBAL_CMAKE_OPTIONS.Split(" ") ..
+    - cmake -G "$env:CMAKE_GENERATOR" "-DCMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL" ..
     - cmake --build . --config Release -j
     - ctest -C Release --output-on-failure
     - cmake -P cmake_install.cmake
@@ -50,7 +49,7 @@ macos-build:
     - python3 tools/ci/update_artifact_version.py
     - mkdir build
     - cd build
-    - cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=install ${GLOBAL_CMAKE_OPTIONS} ..
+    - cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=install ..
     - make -j
     - make install
     - ctest --output-on-failure
