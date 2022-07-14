@@ -10,6 +10,9 @@ tools/version/templates/vars.wxi.in
 <Include>
   <?define VersionNumber = "0.1.0.2" ?>
 
+  <?define VcRedistMergeModulex64 = "$(var.VcRedistInstallLoc)\MergeModules\Microsoft_VC141_CRT_x64.msm" ?>
+  <?define VcRedistMergeModulex86 = "$(var.VcRedistInstallLoc)\MergeModules\Microsoft_VC141_CRT_x86.msm" ?>
+
   <?if $(var.Platform) = x64 ?>
     <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
     <?define MergeDescription = "ETC RDMnet Broker Service 64-bit Merge Module" ?>
