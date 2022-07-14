@@ -8,8 +8,7 @@
     {
       "name": "nlohmann_json",
       "gitlabPath": "mirrors/thirdparty/arthursonzogni/nlohmann_json_cmake_fetchcontent",
-      "version": "3.10.5",
-      "manual": true
+      "version": "3.10.5"
     },
     {
       "name": "googletest",
