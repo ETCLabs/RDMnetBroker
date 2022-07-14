@@ -34,6 +34,7 @@ windows-build:
     - cd ..
     - .\tools\ci\windows_build_artifacts.bat
     - dir
+    - echo %CI_PROJECT_DIR%
   artifacts:
     when: always
     paths:
