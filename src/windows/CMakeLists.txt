@@ -53,10 +53,10 @@ add_executable(RDMnetBrokerService
 
   main.cpp
 )
+set_target_properties(RDMnetBrokerService PROPERTIES CXX_STANDARD 17)
 target_include_directories(RDMnetBrokerService PRIVATE GeneratedFiles)
 target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore)
 target_compile_definitions(RDMnetBrokerService PRIVATE UNICODE _UNICODE)
-set_target_properties(RDMnetBrokerService PROPERTIES CXX_STANDARD 17)
 
 install(TARGETS RDMnetBrokerService
   RUNTIME DESTINATION bin
