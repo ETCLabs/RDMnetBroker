@@ -33,6 +33,7 @@ windows-build:
     - cmake -P cmake_install.cmake
     - cd ..
     - .\tools\ci\windows_build_artifacts.bat
+    - dir
   artifacts:
     when: always
     paths:
