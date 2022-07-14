@@ -31,9 +31,9 @@ class MockBrokerOsInterface : public BrokerOsInterface
 public:
   MOCK_METHOD(std::string, GetLogFilePath, (), (const override));
   MOCK_METHOD(bool, OpenLogFile, (), (override));
-  MOCK_METHOD((std::pair<std::string, std::ifstream>), GetConfFile, (rdmnet::BrokerLog & log), (override));
-  MOCK_METHOD(void, GetLogTime, (EtcPalLogTimeParams & time), (override));
-  MOCK_METHOD(void, OutputLogMsg, (const std::string& msg), (override));
+  MOCK_METHOD((std::pair<std::string, std::ifstream>), GetConfFile, (etcpal::Logger & log), (override));
+  MOCK_METHOD(etcpal::LogTimestamp, GetLogTimestamp, (), (override));
+  MOCK_METHOD(void, HandleLogMessage, (const EtcPalLogStrings& strings), (override));
 };
 
 class TestBrokerShell : public testing::Test

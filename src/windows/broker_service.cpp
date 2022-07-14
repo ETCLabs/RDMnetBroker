@@ -235,7 +235,7 @@ void BrokerService::SetServiceStatus(DWORD current_state, DWORD win32_error, DWO
   ::SetServiceStatus(status_handle_, &status_);
 }
 
-void BrokerService::WriteEventLogEntry(PWSTR message, WORD type)
+void BrokerService::WriteEventLogEntry(PCWSTR message, WORD type)
 {
   HANDLE event_src_handle = RegisterEventSource(NULL, name_.c_str());
   if (event_src_handle)
@@ -259,7 +259,7 @@ void BrokerService::WriteEventLogEntry(PWSTR message, WORD type)
   }
 }
 
-void BrokerService::WriteErrorLogEntry(PWSTR function_name, DWORD error)
+void BrokerService::WriteErrorLogEntry(PCWSTR function_name, DWORD error)
 {
   constexpr size_t kMsgSize = 260;
   wchar_t message[kMsgSize];

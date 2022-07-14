@@ -25,15 +25,15 @@
 #include <array>
 #include <atomic>
 #include "etcpal/inet.h"
-#include "etcpal/log.h"
-#include "rdmnet/broker.h"
+#include "etcpal/cpp/log.h"
+#include "rdmnet/cpp/broker.h"
 #include "broker_config.h"
 #include "broker_os_interface.h"
 
 // BrokerShell : Platform-neutral wrapper around the Broker library from a generic console
 // application. Instantiates and drives the Broker library.
 
-class BrokerShell : public rdmnet::BrokerNotify
+class BrokerShell : public rdmnet::Broker::NotifyHandler
 {
 public:
   BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface) {}
@@ -47,7 +47,7 @@ public:
 private:
   BrokerOsInterface& os_interface_;
   rdmnet::Broker broker_;
-  rdmnet::BrokerLog log_;
+  etcpal::Logger log_;
 
   BrokerConfig broker_config_;
 
@@ -62,7 +62,7 @@ private:
   void HandleScopeChanged(const std::string& new_scope) override;
   void PrintWarningMessage();
 
-  void ApplySettingsChanges(rdmnet::BrokerSettings& settings);
+  void ApplySettingsChanges(rdmnet::Broker::Settings& settings);
 };
 
 #endif  // BROKER_SHELL_H_

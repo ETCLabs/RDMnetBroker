@@ -43,8 +43,8 @@ public:
   BrokerService(const wchar_t* service_name);
 
 private:
-  void WriteEventLogEntry(PWSTR message, WORD type);
-  void WriteErrorLogEntry(PWSTR function_name, DWORD error = GetLastError());
+  void WriteEventLogEntry(PCWSTR message, WORD type);
+  void WriteErrorLogEntry(PCWSTR function_name, DWORD error = GetLastError());
 
   static void WINAPI ServiceCtrlHandler(DWORD control_code);
   static void WINAPI ServiceMain(DWORD argc, LPWSTR* argv);

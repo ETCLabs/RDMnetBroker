@@ -31,7 +31,7 @@
 constexpr const char kValidationFailLogPrefix[] = "Could not parse configuration file: ";
 
 template <typename... Args>
-void LogParseError(rdmnet::BrokerLog* log, const std::string& format, Args&&... args)
+void LogParseError(etcpal::Logger* log, const std::string& format, Args&&... args)
 {
   if (log)
   {
@@ -47,14 +47,14 @@ struct Validator final
   // The expected value type
   const json::value_t type;
   // A function to validate and store the value in the config's settings structure.
-  std::function<bool(const json&, BrokerConfig&, rdmnet::BrokerLog*)> validate_and_store;
+  std::function<bool(const json&, BrokerConfig&, etcpal::Logger*)> validate_and_store;
   // A function to store the default setting in the settings structure if the value is not present
   // in the config file.
   std::function<void(BrokerConfig&)> store_default;
 };
 
 // The CID must be a string representation of a UUID.
-bool ValidateAndStoreCid(const json& val, BrokerConfig& config, rdmnet::BrokerLog* log)
+bool ValidateAndStoreCid(const json& val, BrokerConfig& config, etcpal::Logger* log)
 {
   config.settings.cid = etcpal::Uuid::FromString(val);
   if (!config.settings.cid.IsNull())
@@ -74,7 +74,7 @@ bool ValidateAndStoreCid(const json& val, BrokerConfig& config, rdmnet::BrokerLo
 //   "manufacturer_id": <number, always present>,
 //   "device_id": <number, present only if type is "static">
 // }
-bool ValidateAndStoreUid(const json& val, BrokerConfig& config, rdmnet::BrokerLog* log)
+bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* log)
 {
   if (!val.contains("type"))
   {
@@ -128,10 +128,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, rdmnet::BrokerLo
       return false;
     }
 
-    RdmUid static_uid;
-    static_uid.manu = static_cast<uint16_t>(manufacturer_id);
-    static_uid.id = static_cast<uint32_t>(device_id);
-    config.settings.SetStaticUid(static_uid);
+    config.settings.uid = rdm::Uid::Static(static_cast<uint16_t>(manufacturer_id), static_cast<uint32_t>(device_id));
     return true;
   }
   else if (type == "dynamic")
@@ -142,7 +139,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, rdmnet::BrokerLo
                     "When \"/uid/type\" is \"dynamic\", the \"uid\" object must not contain a \"device_id\" field.");
       return false;
     }
-    config.settings.SetDynamicUid(static_cast<uint16_t>(manufacturer_id));
+    config.settings.uid = rdm::Uid::DynamicUidRequest(static_cast<uint16_t>(manufacturer_id));
     return true;
   }
   else
@@ -154,7 +151,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, rdmnet::BrokerLo
 
 // Store a generic string.
 bool ValidateAndStoreString(const char* key_ptr, const json& val, std::string& string, size_t max_size,
-                            rdmnet::BrokerLog* log, bool truncation_allowed = true)
+                            etcpal::Logger* log, bool truncation_allowed = true)
 {
   const std::string str_val = val;
   if (str_val.empty())
@@ -204,7 +201,7 @@ template<> const char* FormatStringOf<uint16_t>::value = "%" PRIu16;
 // Validate an arithmetic type and set it in the settings struct if it is within the valid range
 // for its type.
 template <typename IntType>
-bool ValidateAndStoreInt(const char* key_ptr, const json& val, IntType& setting, rdmnet::BrokerLog* log,
+bool ValidateAndStoreInt(const char* key_ptr, const json& val, IntType& setting, etcpal::Logger* log,
                          const std::pair<IntType, IntType>& limits = std::make_pair<IntType, IntType>(
                              std::numeric_limits<IntType>::min(), std::numeric_limits<IntType>::max()))
 {
@@ -223,50 +220,18 @@ bool ValidateAndStoreInt(const char* key_ptr, const json& val, IntType& setting,
   return true;
 }
 
-bool ValidateAndStoreMacList(const json& val, BrokerConfig& config, rdmnet::BrokerLog* log)
+bool ValidateAndStoreInterfaceList(const json& val, BrokerConfig& config, etcpal::Logger* log)
 {
-  const std::vector<json> mac_list = val;
-  for (const json& json_mac : mac_list)
+  const std::vector<json> listen_interfaces = val;
+  for (const json& listen_interface : listen_interfaces)
   {
-    if (json_mac.type() != json::value_t::string)
+    if (listen_interface.type() != json::value_t::string)
     {
-      LogParseError(log, "The array field \"/listen_macs\" may only contain values of type \"string\".");
-      config.settings.listen_macs.clear();
+      LogParseError(log, "The array field \"/listen_interfaces\" may only contain values of type \"string\".");
+      config.settings.listen_interfaces.clear();
       return false;
     }
-    etcpal::MacAddr mac = etcpal::MacAddr::FromString(json_mac);
-    if (mac.IsNull())
-    {
-      LogParseError(log, "The value \"%s\" in array field \"/listen_macs\" is not a valid MAC address.",
-                    std::string(json_mac).c_str());
-      config.settings.listen_macs.clear();
-      return false;
-    }
-    config.settings.listen_macs.insert(mac);
-  }
-  return true;
-}
-
-bool ValidateAndStoreIpList(const json& val, BrokerConfig& config, rdmnet::BrokerLog* log)
-{
-  const std::vector<json> ip_list = val;
-  for (const json& json_ip : ip_list)
-  {
-    if (json_ip.type() != json::value_t::string)
-    {
-      LogParseError(log, "The array field \"/listen_addrs\" may only contain values of type \"string\".");
-      config.settings.listen_addrs.clear();
-      return false;
-    }
-    etcpal::IpAddr ip = etcpal::IpAddr::FromString(json_ip);
-    if (!ip.IsValid())
-    {
-      LogParseError(log, "The value \"%s\" in array field \"/listen_macs\" is not a valid IP address.",
-                    std::string(json_ip).c_str());
-      config.settings.listen_addrs.clear();
-      return false;
-    }
-    config.settings.listen_addrs.insert(ip);
+    config.settings.listen_interfaces.push_back(listen_interface);
   }
   return true;
 }
@@ -295,7 +260,7 @@ std::string GetLogLevelOptions()
          "}";
 }
 
-bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, rdmnet::BrokerLog* log)
+bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, etcpal::Logger* log)
 {
   const std::string log_level = val;
   auto level_pair = kLogLevelOptions.find(log_level);
@@ -325,12 +290,9 @@ bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, rdmnet::Bro
 //
 //   "scope": "default",
 //   "listen_port": 8888,
-//   "listen_macs": [
-//     "00:c0:16:12:34:56"
-//   ],
-//   "listen_addrs": [
-//     "10.101.13.37",
-//     "2001:db8::1234:5678"
+//   "listen_interfaces": [
+//     "eth0",
+//     "wlan0"
 //   ],
 //
 //   "log_level": "info",
@@ -356,7 +318,7 @@ static const Validator kSettingsValidatorArray[] = {
     "/uid"_json_pointer,
     json::value_t::object,
     ValidateAndStoreUid,
-    [](auto& config) { config.settings.SetDynamicUid(0x6574); }, // Set ETC's manufacturer ID
+    [](auto& config) { config.settings.uid = rdm::Uid::DynamicUidRequest(0x6574); }, // Set ETC's manufacturer ID
   },
   {
     "/dns_sd/service_instance_name"_json_pointer,
@@ -402,16 +364,10 @@ static const Validator kSettingsValidatorArray[] = {
     std::function<void(BrokerConfig&)>() // Leave the default constructed port value.
   },
   {
-    "/listen_macs"_json_pointer,
+    "/listen_interfaces"_json_pointer,
     json::value_t::array,
-    ValidateAndStoreMacList,
-    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_macs value.
-  },
-  {
-    "/listen_addrs"_json_pointer,
-    json::value_t::array,
-    ValidateAndStoreIpList,
-    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_addrs value.
+    ValidateAndStoreInterfaceList,
+    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_interfaces value.
   },
   {
     "/log_level"_json_pointer,
@@ -423,7 +379,7 @@ static const Validator kSettingsValidatorArray[] = {
     "/max_connections"_json_pointer,
     json::value_t::number_unsigned,
     [](const json& val, auto& config, auto log) {
-      return ValidateAndStoreInt<unsigned int>("/max_connections", val, config.settings.max_connections, log);
+      return ValidateAndStoreInt<unsigned int>("/max_connections", val, config.settings.limits.connections, log);
     },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
@@ -431,7 +387,7 @@ static const Validator kSettingsValidatorArray[] = {
     "/max_controllers"_json_pointer,
     json::value_t::number_unsigned,
     [](const json& val, auto& config, auto log) {
-      return ValidateAndStoreInt<unsigned int>("/max_controllers", val, config.settings.max_controllers, log);
+      return ValidateAndStoreInt<unsigned int>("/max_controllers", val, config.settings.limits.controllers, log);
     },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
@@ -439,7 +395,7 @@ static const Validator kSettingsValidatorArray[] = {
     "/max_controller_messages"_json_pointer,
     json::value_t::number_unsigned,
     [](const json& val, auto& config, auto log) {
-      return ValidateAndStoreInt<unsigned int>("/max_controller_messages", val, config.settings.max_controller_messages, log);
+      return ValidateAndStoreInt<unsigned int>("/max_controller_messages", val, config.settings.limits.controller_messages, log);
     },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
@@ -447,7 +403,7 @@ static const Validator kSettingsValidatorArray[] = {
     "/max_devices"_json_pointer,
     json::value_t::number_unsigned,
     [](const json& val, auto& config, auto log) {
-      return ValidateAndStoreInt<unsigned int>("/max_devices", val, config.settings.max_devices, log);
+      return ValidateAndStoreInt<unsigned int>("/max_devices", val, config.settings.limits.devices, log);
     },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
@@ -455,7 +411,7 @@ static const Validator kSettingsValidatorArray[] = {
     "/max_device_messages"_json_pointer,
     json::value_t::number_unsigned,
     [](const json& val, auto& config, auto log) {
-      return ValidateAndStoreInt<unsigned int>("/max_device_messages", val, config.settings.max_device_messages, log);
+      return ValidateAndStoreInt<unsigned int>("/max_device_messages", val, config.settings.limits.device_messages, log);
     },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   },
@@ -463,7 +419,7 @@ static const Validator kSettingsValidatorArray[] = {
     "/max_reject_connections"_json_pointer,
     json::value_t::number_unsigned,
     [](const json& val, auto& config, auto log) {
-      return ValidateAndStoreInt<unsigned int>("/max_reject_connections", val, config.settings.max_reject_connections, log);
+      return ValidateAndStoreInt<unsigned int>("/max_reject_connections", val, config.settings.limits.reject_connections, log);
     },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   }
@@ -471,7 +427,7 @@ static const Validator kSettingsValidatorArray[] = {
 // clang-format on
 
 // Read the JSON configuration from an input stream.
-BrokerConfig::ParseResult BrokerConfig::Read(std::istream& stream, rdmnet::BrokerLog* log)
+BrokerConfig::ParseResult BrokerConfig::Read(std::istream& stream, etcpal::Logger* log)
 {
   try
   {
@@ -498,7 +454,7 @@ void BrokerConfig::SetDefaults()
 // Validate the JSON object contained in the "current_" member, which presumably has just been
 // deserialized. Currently, extra keys present in the JSON which we don't recognize are considered
 // valid.
-BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(rdmnet::BrokerLog* log)
+BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(etcpal::Logger* log)
 {
   for (const auto& setting : kSettingsValidatorArray)
   {

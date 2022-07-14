@@ -31,11 +31,11 @@ public:
   // BrokerOsInterface
   std::string GetLogFilePath() const override;
   bool OpenLogFile() override;
-  std::pair<std::string, std::ifstream> GetConfFile(rdmnet::BrokerLog& log) override;
+  std::pair<std::string, std::ifstream> GetConfFile(etcpal::Logger& log) override;
 
-  // rdmnet::BrokerLogInterface
-  void GetLogTime(EtcPalLogTimeParams& time) override;
-  void OutputLogMsg(const std::string& msg) override;
+  // etcpal::LogMessageHandler
+  etcpal::LogTimestamp GetLogTimestamp() override;
+  void HandleLogMessage(const EtcPalLogStrings& strings) override;
 
 private:
   std::wstring program_data_path_;

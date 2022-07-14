@@ -41,7 +41,7 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
   log_.SetLogMask(broker_config_.log_mask);
 
-  if (!broker_.Startup(broker_config_.settings, this, &log_))
+  if (!broker_.Startup(broker_config_.settings, &log_, this))
   {
     log_.Shutdown();
     return false;
@@ -49,8 +49,6 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
   while (true)
   {
-    broker_.Tick();
-
     if (shutdown_requested_)
     {
       break;
@@ -59,11 +57,11 @@ bool BrokerShell::Run(bool /*debug_mode*/)
     {
       restart_requested_ = false;
 
-      auto broker_settings = broker_.GetSettings();
+      auto broker_settings = broker_.settings();
       broker_.Shutdown();
 
       ApplySettingsChanges(broker_settings);
-      broker_.Startup(broker_settings, this, &log_);
+      broker_.Startup(broker_settings, &log_, this);
     }
 
     etcpal_thread_sleep(300);
@@ -142,7 +140,7 @@ void BrokerShell::HandleScopeChanged(const std::string& new_scope)
   restart_requested_ = true;
 }
 
-void BrokerShell::ApplySettingsChanges(rdmnet::BrokerSettings& settings)
+void BrokerShell::ApplySettingsChanges(rdmnet::Broker::Settings& settings)
 {
   if (!new_scope_.empty())
   {

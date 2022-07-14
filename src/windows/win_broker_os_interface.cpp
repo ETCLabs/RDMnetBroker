@@ -119,12 +119,12 @@ bool WindowsBrokerOsInterface::OpenLogFile()
   }
 
   // Write an initial message to the log file
-  EtcPalLogTimeParams time;
-  GetLogTime(time);
+  auto time = GetLogTimestamp();
   char initial_msg[512];
-  _snprintf_s<512>(
-      initial_msg, _TRUNCATE, "Starting RDMnet Broker Service version %s on %04d-%02d-%02d at %02d:%02d:%02d...\n",
-      BrokerVersion::VersionString().c_str(), time.year, time.month, time.day, time.hour, time.minute, time.second);
+  _snprintf_s<512>(initial_msg, _TRUNCATE,
+                   "Starting RDMnet Broker Service version %s on %04d-%02d-%02d at %02d:%02d:%02d...\n",
+                   BrokerVersion::VersionString().c_str(), time.get().year, time.get().month, time.get().day,
+                   time.get().hour, time.get().minute, time.get().second);
   fwrite(initial_msg, sizeof(char), strnlen_s(initial_msg, 100), log_file_);
 
   // Write an error message to the log file if it is open and there was an error rotating the logs
@@ -140,7 +140,7 @@ bool WindowsBrokerOsInterface::OpenLogFile()
   return true;
 }
 
-std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(rdmnet::BrokerLog& log)
+std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(etcpal::Logger& log)
 {
   if (program_data_path_.empty())
   {
@@ -154,7 +154,7 @@ std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(rdmn
   return std::make_pair(ConvertWstringToUtf8(conf_file_path), std::move(conf_file));
 }
 
-void WindowsBrokerOsInterface::GetLogTime(EtcPalLogTimeParams& time)
+etcpal::LogTimestamp WindowsBrokerOsInterface::GetLogTimestamp()
 {
   int utc_offset = 0;
   TIME_ZONE_INFORMATION tzinfo;
@@ -173,20 +173,16 @@ void WindowsBrokerOsInterface::GetLogTime(EtcPalLogTimeParams& time)
 
   SYSTEMTIME win_time;
   GetLocalTime(&win_time);
-  time.year = win_time.wYear;
-  time.month = win_time.wMonth;
-  time.day = win_time.wDay;
-  time.hour = win_time.wHour;
-  time.minute = win_time.wMinute;
-  time.second = win_time.wSecond;
-  time.msec = win_time.wMilliseconds;
-  time.utc_offset = utc_offset;
+
+  return etcpal::LogTimestamp(win_time.wYear, win_time.wMonth, win_time.wDay, win_time.wHour, win_time.wMinute,
+                              win_time.wSecond, win_time.wMilliseconds, utc_offset);
 }
 
-void WindowsBrokerOsInterface::OutputLogMsg(const std::string& str)
+void WindowsBrokerOsInterface::HandleLogMessage(const EtcPalLogStrings& strings)
 {
   if (log_file_)
   {
+    std::string str(strings.human_readable);
     fwrite(str.c_str(), sizeof(char), str.length(), log_file_);
     fwrite("\n", sizeof(char), 1, log_file_);
     fflush(log_file_);
