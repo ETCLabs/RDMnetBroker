@@ -22,6 +22,8 @@ if(NOT COMPILING_AS_OSS)
 endif()
 include(${RDMNETBROKER_CMAKE}/ResolveDependencies.cmake)
 
+set_target_properties(RDMnetBroker PROPERTIES CXX_STANDARD 11)
+
 ############################## Standalone support #############################
 
 if(NOT COMPILING_AS_OSS)
