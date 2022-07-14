@@ -48,9 +48,9 @@ macos-build:
   script:
     - mkdir build
     - cd build
-    - cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=install ${GLOBAL_CMAKE_OPTIONS} ..
-    - make -j
-    - make install
+    - cmake -DCMAKE_INSTALL_PREFIX=install ${GLOBAL_CMAKE_OPTIONS} ..
+    - cmake --build .
+    - cmake -P cmake_install.cmake
     - ctest --output-on-failure
     - cd ..
 #    - python3 tools/install/macos/macos_build_package.py
