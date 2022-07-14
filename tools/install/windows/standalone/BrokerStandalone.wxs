@@ -5,6 +5,9 @@
   <?include GeneratedFiles\vcredist.wxi ?>
   <?include GeneratedFiles\mdnsmerge.wxi ?>
 
+  <?define VcRedistMergeModulex64 = "$(var.VcRedistInstallLoc)\MergeModules\Microsoft_VC141_CRT_x64.msm" ?>
+  <?define VcRedistMergeModulex86 = "$(var.VcRedistInstallLoc)\MergeModules\Microsoft_VC141_CRT_x86.msm" ?>
+
   <!-- This variable should NEVER BE CHANGED at any point in the product's lifecycle! -->
   <!-- It will muck with Windows installer logic. You have been warned. -->
   <?define UpgradeCode = "0BC7218C-9425-4634-8B22-147C8F48A1DE" ?>
