@@ -6,9 +6,9 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>e897a02f-1fe9-4148-b326-32affde3df0d</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>RdmnetBroker_x86</OutputName>
+    <OutputName>RDMnetBroker_x86</OutputName>
     <OutputType>Module</OutputType>
-    <Name>RdmnetBroker_x86</Name>
+    <Name>RDMnetBroker_x86</Name>
     <InstallSourceDir>..\..\..\..\build\install_x86\bin</InstallSourceDir>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>

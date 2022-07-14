@@ -6,9 +6,9 @@
   <?include ..\vars.wxi ?>
 
   <?if $(var.Platform) = x64 ?>
-    <?define RdmnetBrokerModuleId = "RdmnetBroker_x64" ?>
+    <?define RdmnetBrokerModuleId = "RDMnetBroker_x64" ?>
   <?else ?>
-    <?define RdmnetBrokerModuleId = "RdmnetBroker_x86" ?>
+    <?define RdmnetBrokerModuleId = "RDMnetBroker_x86" ?>
   <?endif ?>
 
   <Module Id="$(var.RdmnetBrokerModuleId)" Language="0" Version="$(var.VersionNumber)" Codepage="1252">

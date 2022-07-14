@@ -6,9 +6,9 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>dcf3552a-f098-4d9d-92be-8dc4335a29fc</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>RdmnetBroker_x64</OutputName>
+    <OutputName>RDMnetBroker_x64</OutputName>
     <OutputType>Module</OutputType>
-    <Name>RdmnetBroker_x64</Name>
+    <Name>RDMnetBroker_x64</Name>
     <InstallSourceDir>..\..\..\..\build\install_x64\bin</InstallSourceDir>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>

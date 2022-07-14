@@ -39,10 +39,10 @@
       <Merge Id="mDNSResponder" SourceFile="$(var.mDNSMergeModule)" DiskId="1" Language="0" />
       <?if $(var.Platform) = x64 ?>
         <Merge Id="VCRedistx64" SourceFile="$(var.VcRedistMergeModulex64)" DiskId="1" Language="0" />
-        <Merge Id="RdmnetBroker_x64" SourceFile="..\merge\bin\$(var.Configuration)\RdmnetBroker_x64.msm"
+        <Merge Id="RDMnetBroker_x64" SourceFile="..\merge\bin\$(var.Configuration)\RDMnetBroker_x64.msm"
             DiskId="1" Language="0" />
       <?else ?>
-        <Merge Id="RdmnetBroker_x86" SourceFile="..\merge\bin\$(var.Configuration)\RdmnetBroker_x86.msm"
+        <Merge Id="RDMnetBroker_x86" SourceFile="..\merge\bin\$(var.Configuration)\RDMnetBroker_x86.msm"
             DiskId="1" Language="0" />
       <?endif ?>
     </Directory>
@@ -53,9 +53,9 @@
       <MergeRef Id="VCRedistx86" />
       <?if $(var.Platform) = x64 ?>
         <MergeRef Id="VCRedistx64" />
-        <MergeRef Id="RdmnetBroker_x64" />
+        <MergeRef Id="RDMnetBroker_x64" />
       <?else ?>
-        <MergeRef Id="RdmnetBroker_x86" />
+        <MergeRef Id="RDMnetBroker_x86" />
       <?endif ?>
       <MergeRef Id="mDNSResponder" />
     </Feature>
