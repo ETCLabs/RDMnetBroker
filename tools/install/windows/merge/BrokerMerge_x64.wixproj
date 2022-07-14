@@ -9,7 +9,7 @@
     <OutputName>RdmnetBroker_x64</OutputName>
     <OutputType>Module</OutputType>
     <Name>RdmnetBroker_x64</Name>
-    <InstallSourceDir>..\..\..\..\build\install\bin</InstallSourceDir>
+    <InstallSourceDir>..\..\..\..\build\install_x64\bin</InstallSourceDir>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineSolutionProperties>false</DefineSolutionProperties>
