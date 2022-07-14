@@ -5,7 +5,13 @@
 
   <?include ..\vars.wxi ?>
 
-  <Module Id="RdmnetBroker_x86" Language="0" Version="$(var.VersionNumber)" Codepage="1252">
+  <?if $(var.Platform) = x64 ?>
+    <?define RdmnetBrokerModuleId = "RdmnetBroker_x64" ?>
+  <?else ?>
+    <?define RdmnetBrokerModuleId = "RdmnetBroker_x86" ?>
+  <?endif ?>
+
+  <Module Id="$(var.RdmnetBrokerModuleId)" Language="0" Version="$(var.VersionNumber)" Codepage="1252">
 
     <Package Id="DEE166EC-5441-43DC-9532-FFAFB81FFA93" Description="$(var.MergeDescription)"
         Manufacturer="ETC Inc." InstallerVersion="200" Languages="1033" SummaryCodepage="1252"
