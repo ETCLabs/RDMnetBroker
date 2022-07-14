@@ -8,7 +8,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>RdmnetBroker_x86</OutputName>
     <OutputType>Package</OutputType>
-    <Name>EtcRdmnetBroker</Name>
+    <Name>RdmnetBroker_x86</Name>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <DefineSolutionProperties>false</DefineSolutionProperties>

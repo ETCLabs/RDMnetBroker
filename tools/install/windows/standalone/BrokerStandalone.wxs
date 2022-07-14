@@ -36,7 +36,7 @@
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Merge Id="VcRedistx86" SourceFile="$(var.VcRedistMergeModulex86)" DiskId="1" Language="0" />
       <Merge Id="mDNSResponder" SourceFile="$(var.mDNSMergeModule)" DiskId="1" Language="0" />
-      <Merge Id="EtcRdmnetBroker" SourceFile="..\merge\bin\$(var.Configuration)\EtcRdmnetBroker.msm"
+      <Merge Id="RdmnetBroker_x86" SourceFile="..\merge\bin\$(var.Configuration)\RdmnetBroker_x86.msm"
           DiskId="1" Language="0" />
     </Directory>
 
@@ -44,7 +44,7 @@
         AllowAdvertise="no" Display="hidden" Level="1">
       <MergeRef Id="VcRedistx86" />
       <MergeRef Id="mDNSResponder" />
-      <MergeRef Id="EtcRdmnetBroker" />
+      <MergeRef Id="RdmnetBroker_x86" />
     </Feature>
 
     <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />

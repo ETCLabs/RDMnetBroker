@@ -5,7 +5,7 @@
 
   <?include ..\vars.wxi ?>
 
-  <Module Id="EtcRdmnetBroker" Language="0" Version="$(var.VersionNumber)" Codepage="1252">
+  <Module Id="RdmnetBroker_x86" Language="0" Version="$(var.VersionNumber)" Codepage="1252">
 
     <Package Id="DEE166EC-5441-43DC-9532-FFAFB81FFA93" Description="$(var.MergeDescription)"
         Manufacturer="ETC Inc." InstallerVersion="200" Languages="1033" SummaryCodepage="1252"

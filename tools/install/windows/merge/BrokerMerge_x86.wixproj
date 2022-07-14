@@ -8,7 +8,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>RdmnetBroker_x86</OutputName>
     <OutputType>Module</OutputType>
-    <Name>EtcRdmnetBroker</Name>
+    <Name>RdmnetBroker_x86</Name>
     <InstallSourceDir>..\..\..\..\build\install\bin</InstallSourceDir>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
