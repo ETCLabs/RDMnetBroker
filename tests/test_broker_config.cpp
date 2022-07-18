@@ -29,11 +29,11 @@ class TestBrokerConfig : public testing::Test
 {
 protected:
   void TestInvalidUnsignedIntValueHelper(const std::string& key);
-  void TestValidUnsignedIntValueHelper(const std::string& key,
+  void TestValidUnsignedIntValueHelper(const std::string&                                           key,
                                        std::function<unsigned int(const rdmnet::Broker::Settings&)> value_getter);
 
   void TestDnsSdInvalidStringValueHelper(const std::string& key);
-  void TestDnsSdValidStringValueHelper(const std::string& key,
+  void TestDnsSdValidStringValueHelper(const std::string&                                          key,
                                        std::function<std::string(const rdmnet::Broker::Settings&)> value_getter);
 
   BrokerConfig config_;
@@ -44,14 +44,14 @@ protected:
 TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 {
   const std::string kCid = "4958ac8f-cd5e-42cd-ab7e-9797b0efd3ac";
-  const uint16_t kDynamicUidManu = 25972;
+  const uint16_t    kDynamicUidManu = 25972;
 
   const std::string kDnsServiceInstanceName = "My ETC RDMnet Broker";
   const std::string kDnsManufacturer = "ETC";
   const std::string kDnsModel = "RDMnet Broker";
 
-  const std::string kScope = "default";
-  const uint16_t kListenPort = 8888;
+  const std::string              kScope = "default";
+  const uint16_t                 kListenPort = 8888;
   const std::vector<std::string> kListenInterfaces = {"eth0", "eth1", "wlan0", "wlan1"};
 
   const unsigned int kMaxConnections = 20000;
@@ -190,8 +190,8 @@ TEST_F(TestBrokerConfig, CidCreatedIfNotPresentInConfig)
 
 TEST_F(TestBrokerConfig, ValidCidParsedCorrectly)
 {
-  const std::string kValidCid = "1ef44b69-2185-4e3a-945f-a5a264c405e8";
-  const std::string kConfigContainingValidCid = R"( { "cid": ")" + kValidCid + R"( " } )";
+  const std::string  kValidCid = "1ef44b69-2185-4e3a-945f-a5a264c405e8";
+  const std::string  kConfigContainingValidCid = R"( { "cid": ")" + kValidCid + R"( " } )";
   std::istringstream test_stream(kConfigContainingValidCid);
   EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
 
@@ -281,7 +281,7 @@ TEST_F(TestBrokerConfig, UidDynamicIfNotPresentInConfig)
 
 TEST_F(TestBrokerConfig, ValidUidParsedCorrectly)
 {
-  rdm::Uid valid_static_uid = rdm::Uid::Static(16000, 3333333);
+  rdm::Uid          valid_static_uid = rdm::Uid::Static(16000, 3333333);
   const std::string kValidStaticUidConfig = R"( {
     "uid": {
       "type": "static",
@@ -290,7 +290,7 @@ TEST_F(TestBrokerConfig, ValidUidParsedCorrectly)
     }
   } )";
 
-  rdm::Uid valid_dynamic_uid = rdm::Uid::DynamicUidRequest(17000);
+  rdm::Uid          valid_dynamic_uid = rdm::Uid::DynamicUidRequest(17000);
   const std::string kValidDynamicUidConfig = R"( {
     "uid": {
       "type": "dynamic",
@@ -336,7 +336,8 @@ void TestBrokerConfig::TestDnsSdInvalidStringValueHelper(const std::string& key)
 }
 
 void TestBrokerConfig::TestDnsSdValidStringValueHelper(
-    const std::string& key, std::function<std::string(const rdmnet::Broker::Settings&)> value_getter)
+    const std::string&                                          key,
+    std::function<std::string(const rdmnet::Broker::Settings&)> value_getter)
 {
   const std::string kTestString = "Broker String Name From Unit Tests";
   const std::string kValidConfig = R"( { "dns_sd": { ")" + key + R"(": ")" + kTestString + R"(" } } )";
@@ -571,7 +572,8 @@ void TestBrokerConfig::TestInvalidUnsignedIntValueHelper(const std::string& key)
 }
 
 void TestBrokerConfig::TestValidUnsignedIntValueHelper(
-    const std::string& key, std::function<unsigned int(const rdmnet::Broker::Settings&)> value_getter)
+    const std::string&                                           key,
+    std::function<unsigned int(const rdmnet::Broker::Settings&)> value_getter)
 {
   // clang-format off
   const std::vector<std::pair<std::string, unsigned int>> kValidIntStrings = {

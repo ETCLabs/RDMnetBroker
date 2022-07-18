@@ -28,10 +28,10 @@
 #include "service_utils.h"
 #include "broker_version.h"
 
-constexpr const WCHAR kRelativeConfFileName[] = L"\\ETC\\RDMnetBroker\\broker.conf";
+constexpr const WCHAR                  kRelativeConfFileName[] = L"\\ETC\\RDMnetBroker\\broker.conf";
 static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetBroker"};
-static const std::wstring kLogFileName = L"broker.log";
-static constexpr int kMaxLogRotationFiles = 5;
+static const std::wstring              kLogFileName = L"broker.log";
+static constexpr int                   kMaxLogRotationFiles = 5;
 
 std::string ConvertWstringToUtf8(const std::wstring& str)
 {
@@ -40,7 +40,7 @@ std::string ConvertWstringToUtf8(const std::wstring& str)
   if (size_needed > 0)
   {
     auto buf = std::make_unique<char[]>(size_needed);
-    int convert_res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, buf.get(), size_needed, NULL, NULL);
+    int  convert_res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, buf.get(), size_needed, NULL, NULL);
     if (convert_res > 0)
     {
       return buf.get();
@@ -51,7 +51,7 @@ std::string ConvertWstringToUtf8(const std::wstring& str)
 
 WindowsBrokerOsInterface::WindowsBrokerOsInterface()
 {
-  PWSTR program_data_path;
+  PWSTR   program_data_path;
   HRESULT get_known_folder_res = SHGetKnownFolderPath(FOLDERID_ProgramData, 0, NULL, &program_data_path);
   if (get_known_folder_res == S_OK)
   {
@@ -148,7 +148,7 @@ std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(etcp
     return std::make_pair(std::string{}, std::ifstream{});
   }
 
-  std::wstring conf_file_path = program_data_path_ + kRelativeConfFileName;
+  std::wstring  conf_file_path = program_data_path_ + kRelativeConfFileName;
   std::ifstream conf_file(conf_file_path);
 
   return std::make_pair(ConvertWstringToUtf8(conf_file_path), std::move(conf_file));
@@ -156,7 +156,7 @@ std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(etcp
 
 etcpal::LogTimestamp WindowsBrokerOsInterface::GetLogTimestamp()
 {
-  int utc_offset = 0;
+  int                   utc_offset = 0;
   TIME_ZONE_INFORMATION tzinfo;
   switch (GetTimeZoneInformation(&tzinfo))
   {
@@ -196,7 +196,7 @@ DWORD WindowsBrokerOsInterface::RotateLogs()
   if (file_attr == INVALID_FILE_ATTRIBUTES)
     return 0;
 
-  int rotate_number = 1;
+  int  rotate_number = 1;
   auto LogBackupFileName = [&](int rotate_number) { return log_file_path_ + L"." + std::to_wstring(rotate_number); };
 
   // Determine the highest log backup file that already exists on the system

@@ -46,15 +46,15 @@ public:
 
 private:
   BrokerOsInterface& os_interface_;
-  rdmnet::Broker broker_;
-  etcpal::Logger log_;
+  rdmnet::Broker     broker_;
+  etcpal::Logger     log_;
 
   BrokerConfig broker_config_;
 
   // Handle changes at runtime
   std::atomic<bool> restart_requested_{false};
-  bool shutdown_requested_{false};
-  std::string new_scope_;
+  bool              shutdown_requested_{false};
+  std::string       new_scope_;
 
   bool OpenLogFile();
   bool LoadBrokerConfig();

@@ -46,7 +46,7 @@ protected:
   }
 
   testing::NiceMock<MockBrokerOsInterface> os_interface_;
-  BrokerShell shell_{os_interface_};
+  BrokerShell                              shell_{os_interface_};
 };
 
 // TODO - if these tests don't work as expected, we might start a real broker and enter an infinite

@@ -29,18 +29,18 @@ public:
   ~WindowsBrokerOsInterface();
 
   // BrokerOsInterface
-  std::string GetLogFilePath() const override;
-  bool OpenLogFile() override;
+  std::string                           GetLogFilePath() const override;
+  bool                                  OpenLogFile() override;
   std::pair<std::string, std::ifstream> GetConfFile(etcpal::Logger& log) override;
 
   // etcpal::LogMessageHandler
   etcpal::LogTimestamp GetLogTimestamp() override;
-  void HandleLogMessage(const EtcPalLogStrings& strings) override;
+  void                 HandleLogMessage(const EtcPalLogStrings& strings) override;
 
 private:
   std::wstring program_data_path_;
   std::wstring log_file_path_;
-  FILE* log_file_{nullptr};
+  FILE*        log_file_{nullptr};
 
   DWORD RotateLogs();
 };

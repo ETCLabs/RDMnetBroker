@@ -31,8 +31,8 @@ class BrokerOsInterface : public etcpal::LogMessageHandler
 public:
   virtual ~BrokerOsInterface() = default;
 
-  virtual std::string GetLogFilePath() const = 0;
-  virtual bool OpenLogFile() = 0;
+  virtual std::string                           GetLogFilePath() const = 0;
+  virtual bool                                  OpenLogFile() = 0;
   virtual std::pair<std::string, std::ifstream> GetConfFile(etcpal::Logger& log) = 0;
 };
 

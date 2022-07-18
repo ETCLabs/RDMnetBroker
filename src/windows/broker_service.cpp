@@ -25,7 +25,8 @@ BrokerService* BrokerService::service_{nullptr};
 
 // The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
 // event is passed along to the BrokerShell instance, which restarts the broker.
-VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID CallerContext, IN PMIB_IPINTERFACE_ROW Row,
+VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID                 CallerContext,
+                                                          IN PMIB_IPINTERFACE_ROW  Row,
                                                           IN MIB_NOTIFICATION_TYPE NotificationType)
 {
   (void)CallerContext;
@@ -262,7 +263,7 @@ void BrokerService::WriteEventLogEntry(PCWSTR message, WORD type)
 void BrokerService::WriteErrorLogEntry(PCWSTR function_name, DWORD error)
 {
   constexpr size_t kMsgSize = 260;
-  wchar_t message[kMsgSize];
+  wchar_t          message[kMsgSize];
   StringCchPrintf(message, kMsgSize, L"%s failed with error 0x%08lx", function_name, error);
   WriteEventLogEntry(message, EVENTLOG_ERROR_TYPE);
 }

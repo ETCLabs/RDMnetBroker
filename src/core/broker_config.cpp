@@ -99,7 +99,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
   }
 
   const std::string type = val["type"];
-  const int64_t manufacturer_id = val["manufacturer_id"];
+  const int64_t     manufacturer_id = val["manufacturer_id"];
 
   if (manufacturer_id <= 0 || manufacturer_id >= 0x8000)
   {
@@ -150,8 +150,12 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
 }
 
 // Store a generic string.
-bool ValidateAndStoreString(const char* key_ptr, const json& val, std::string& string, size_t max_size,
-                            etcpal::Logger* log, bool truncation_allowed = true)
+bool ValidateAndStoreString(const char*     key_ptr,
+                            const json&     val,
+                            std::string&    string,
+                            size_t          max_size,
+                            etcpal::Logger* log,
+                            bool            truncation_allowed = true)
 {
   const std::string str_val = val;
   if (str_val.empty())
@@ -201,9 +205,13 @@ template<> const char* FormatStringOf<uint16_t>::value = "%" PRIu16;
 // Validate an arithmetic type and set it in the settings struct if it is within the valid range
 // for its type.
 template <typename IntType>
-bool ValidateAndStoreInt(const char* key_ptr, const json& val, IntType& setting, etcpal::Logger* log,
-                         const std::pair<IntType, IntType>& limits = std::make_pair<IntType, IntType>(
-                             std::numeric_limits<IntType>::min(), std::numeric_limits<IntType>::max()))
+bool ValidateAndStoreInt(
+    const char*                        key_ptr,
+    const json&                        val,
+    IntType&                           setting,
+    etcpal::Logger*                    log,
+    const std::pair<IntType, IntType>& limits = std::make_pair<IntType, IntType>(std::numeric_limits<IntType>::min(),
+                                                                                 std::numeric_limits<IntType>::max()))
 {
   static_assert(std::is_integral<IntType>(), "This function can only be used with integral types.");
 
@@ -263,7 +271,7 @@ std::string GetLogLevelOptions()
 bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, etcpal::Logger* log)
 {
   const std::string log_level = val;
-  auto level_pair = kLogLevelOptions.find(log_level);
+  auto              level_pair = kLogLevelOptions.find(log_level);
   if (level_pair == kLogLevelOptions.end())
   {
     LogParseError(log, "The value for field \"/log_level\" must be one of " + GetLogLevelOptions() + ".");
