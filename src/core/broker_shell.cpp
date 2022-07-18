@@ -23,6 +23,7 @@
 #include <cstring>
 #include "etcpal/netint.h"
 #include "etcpal/thread.h"
+#include "rdmnet/cpp/common.h"
 #include "broker_version.h"
 
 bool BrokerShell::Run(bool /*debug_mode*/)
@@ -41,8 +42,15 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
   log_.SetLogMask(broker_config_.log_mask);
 
+  if (!rdmnet::Init(log_))
+  {
+    log_.Shutdown();
+    return false;
+  }
+
   if (!broker_.Startup(broker_config_.settings, &log_, this))
   {
+    rdmnet::Deinit();
     log_.Shutdown();
     return false;
   }
@@ -68,6 +76,7 @@ bool BrokerShell::Run(bool /*debug_mode*/)
   }
 
   broker_.Shutdown();
+  rdmnet::Deinit();
   log_.Shutdown();
   return true;
 }
