@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,6 @@
 
 #define BROKER_RESOURCE_VERSION 0,1,0,2
 #define BROKER_RESOURCE_VERSION_STR "0.1.0.2"
-#define BROKER_RESOURCE_VERSION_COPYRIGHT "Copyright 2019 ETC Inc."
+#define BROKER_RESOURCE_VERSION_COPYRIGHT "Copyright 2022 ETC Inc."
 
 #endif  // BROKER_VERSION_RES_H_

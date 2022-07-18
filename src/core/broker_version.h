@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ inline std::string BrokerVersion::BuildDateString()
 
 inline std::string BrokerVersion::CopyrightString()
 {
-  return "Copyright 2019 ETC Inc.";
+  return "Copyright 2022 ETC Inc.";
 }
 
 #endif  // BROKER_VERSION_H_
