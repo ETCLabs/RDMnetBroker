@@ -22,6 +22,7 @@ if(NOT COMPILING_AS_OSS)
 endif()
 include(${RDMNETBROKER_CMAKE}/ResolveDependencies.cmake)
 
+# TODO: Remove this once RDMNET-206 is integrated in a build
 set_target_properties(RDMnetBroker PROPERTIES CXX_STANDARD 11)
 
 ############################## Standalone support #############################
