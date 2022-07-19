@@ -3,7 +3,7 @@
     {
       "name": "RDMnet",
       "gitlabPath": "etc/common-tech/net/rdmnet",
-      "version": "0.4.0.6"
+      "version": "0.4.0.7"
     },
     {
       "name": "nlohmann_json",
