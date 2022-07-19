@@ -16,18 +16,18 @@ windows-build:
     - ct-windows
   parallel:
     matrix:
-      - CMAKE_GENERATOR: Visual Studio 15 2019
+      - CMAKE_GENERATOR_OPTIONS: -G "Visual Studio 16 2019" -A Win32
         CMAKE_INSTALL: install_x86
         VCVARSALL_PLATFORM: x86
         ARTIFACT_TYPE: x86
-      - CMAKE_GENERATOR: Visual Studio 15 2019 Win64
+      - CMAKE_GENERATOR_OPTIONS: -G "Visual Studio 16 2019" -A x64
         CMAKE_INSTALL: install_x64
         VCVARSALL_PLATFORM: amd64
         ARTIFACT_TYPE: x64
   script:
     - mkdir build
     - cd build
-    - cmake -G "$env:CMAKE_GENERATOR" "-DCMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL" $env:GLOBAL_CMAKE_OPTIONS.Split(" ") ..
+    - cmake $env:CMAKE_GENERATOR_OPTIONS.Split(" ") "-DCMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL" $env:GLOBAL_CMAKE_OPTIONS.Split(" ") ..
     - cmake --build . --config Release -j
     - ctest -C Release --output-on-failure
     - cmake -P cmake_install.cmake
