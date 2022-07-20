@@ -17,23 +17,22 @@
  * https://github.com/ETCLabs/RDMnetBroker
  *****************************************************************************/
 
-#ifndef BROKER_SERVICE_H_
-#define BROKER_SERVICE_H_
+#ifndef WIN_BROKER_OS_INTERFACE_H_
+#define WIN_BROKER_OS_INTERFACE_H_
 
-#include "broker_shell.h"
-#include "mac_broker_os_interface.h"
+#include "broker_os_interface.h"
 
-class BrokerService
+class MacBrokerOsInterface final : public BrokerOsInterface
 {
 public:
-  bool Init();
-  void Deinit();
+  // BrokerOsInterface
+  std::string                           GetLogFilePath() const override;
+  bool                                  OpenLogFile() override;
+  std::pair<std::string, std::ifstream> GetConfFile(etcpal::Logger& log) override;
 
-  void PrintVersion() { broker_shell_.PrintVersion(); }
-
-private:
-  MacBrokerOsInterface os_interface_;
-  BrokerShell          broker_shell_{os_interface_};
+  // etcpal::LogMessageHandler
+  etcpal::LogTimestamp GetLogTimestamp() override;
+  void                 HandleLogMessage(const EtcPalLogStrings& strings) override;
 };
 
-#endif  // BROKER_SERVICE_H_
+#endif  // WIN_BROKER_OS_INTERFACE_H_
