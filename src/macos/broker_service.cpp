@@ -21,10 +21,13 @@
 
 bool BrokerService::Init()
 {
-  // TODO (run broker shell in separate thread)
+  shell_thread_.Start([this]() {
+    broker_shell_.Run();
+    });
 }
 
 void BrokerService::Deinit()
 {
-  // TODO (call async shutdown, then join shell thread)
+  broker_shell_.AsyncShutdown();
+  shell_thread_.Join();
 }

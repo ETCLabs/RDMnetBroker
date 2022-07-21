@@ -22,6 +22,7 @@
 
 #include "broker_shell.h"
 #include "mac_broker_os_interface.h"
+#include "etcpal/cpp/thread.h"
 
 class BrokerService
 {
@@ -34,6 +35,8 @@ public:
 private:
   MacBrokerOsInterface os_interface_;
   BrokerShell          broker_shell_{os_interface_};
+
+  etcpal::Thread shell_thread_;
 };
 
 #endif  // BROKER_SERVICE_H_

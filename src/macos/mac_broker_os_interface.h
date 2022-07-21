@@ -33,6 +33,11 @@ public:
   // etcpal::LogMessageHandler
   etcpal::LogTimestamp GetLogTimestamp() override;
   void                 HandleLogMessage(const EtcPalLogStrings& strings) override;
+
+private:
+  std::ofstream log_stream_;
+
+  etcpal::Error RotateLogs();
 };
 
 #endif  // WIN_BROKER_OS_INTERFACE_H_

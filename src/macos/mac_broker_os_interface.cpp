@@ -19,9 +19,56 @@
 
 #include "mac_broker_os_interface.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+static constexpr const char* kLogDirectoryPath[] = {"usr", "local", "var", "log"};
+static constexpr size_t kLogDirectoryDepth = sizeof(kLogFilePath) / sizeof(const char*);
+static constexpr const char* kLogFileName = "RDMnetBroker.log";
+static constexpr mode_t kLogFileMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+
+static constexpr const char* kConfigDirectoryPath[] = {"usr", "local", "etc"};
+static constexpr size_t kConfigFDirectoryDepth = sizeof(kConfigFilePath) / sizeof(const char*);
+static constexpr const char* kConfigFileName = "RDMnetBroker.conf";
+static constexpr mode_t kConfigFileMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+
+std::string ConstructDirectoryPath(const char** dir_elements, size_t num_dir_elements)
+{
+  std::string result = "/";
+  for(size_t i = 0u; i < num_dir_elements; ++i)
+  {
+    result.append(dir_elements[i]);
+    result.append("/");
+  }
+
+  return result;
+}
+
+std::string ConstructFilePath(const char** dir_elements, size_t num_dir_elements, const char* file_name)
+{
+  auto result = ConstructDirectoryPath(dir_elements, num_dir_elements);
+  result.append(kLogFileName);
+  return result;
+}
+
+bool CreateFoldersAsNeeded(const char** dir_elements, size_t num_dir_elements, mode_t mode)
+{
+  std::string mkdir_path;
+  for(size_t i = 0u; i < num_dir_elements; ++i)
+  {
+    mkdir_path.append("/");
+    mkdir_path.append(dir_elements[i]);
+    if((mkdir(mkdir_path.c_str(), mode) != 0) && (errno != EEXIST))
+      return false;
+  }
+
+  return true;
+}
+
 std::string MacBrokerOsInterface::GetLogFilePath() const
 {
-  // TODO
+  return ConstructFilePath(kLogDirectoryPath, kLogDirectoryDepth, kLogFileName);
 }
 
 bool MacBrokerOsInterface::OpenLogFile()
@@ -40,6 +87,11 @@ etcpal::LogTimestamp MacBrokerOsInterface::GetLogTimestamp()
 }
 
 void MacBrokerOsInterface::HandleLogMessage(const EtcPalLogStrings& strings)
+{
+  // TODO
+}
+
+etcpal::Error RotateLogs()
 {
   // TODO
 }
