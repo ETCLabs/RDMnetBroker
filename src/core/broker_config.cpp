@@ -315,6 +315,7 @@ bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, etcpal::Log
 // Any or all of these items can be omitted to use the default value for that key.
 
 // clang-format off
+// This array should always be processed top to bottom in case the default of one property depends on the value of the property above it.
 static const Validator kSettingsValidatorArray[] = {
   {
     "/cid"_json_pointer,
@@ -335,8 +336,9 @@ static const Validator kSettingsValidatorArray[] = {
       return ValidateAndStoreString("/dns_sd/service_instance_name", val, config.settings.dns.service_instance_name, E133_SERVICE_NAME_STRING_PADDED_LENGTH - 1, log);
     },
     [](auto& config) {
-      // Add our CID to the service instance name, to help disambiguate
-      config.settings.dns.service_instance_name = "ETC RDMnet Broker " + config.default_cid().ToString();
+      // Add our CID to the service instance name, to help disambiguate.
+      // This entry is placed after the CID property's entry in the array, so config.settings.cid has already been loaded and can be used.
+      config.settings.dns.service_instance_name = "ETC RDMnet Broker " + config.settings.cid.ToString();
     }
   },
   {
@@ -452,7 +454,7 @@ BrokerConfig::ParseResult BrokerConfig::Read(std::istream& stream, etcpal::Logge
 
 void BrokerConfig::SetDefaults()
 {
-  for (const auto& setting : kSettingsValidatorArray)
+  for (const auto& setting : kSettingsValidatorArray)  // kSettingsValidatorArray must be iterated first to last
   {
     if (setting.store_default)
       setting.store_default(*this);
@@ -464,7 +466,7 @@ void BrokerConfig::SetDefaults()
 // valid.
 BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(etcpal::Logger* log)
 {
-  for (const auto& setting : kSettingsValidatorArray)
+  for (const auto& setting : kSettingsValidatorArray)  // kSettingsValidatorArray must be iterated first to last
   {
     // Check each key that matches an item in our settings array.
     if (current_.contains(setting.pointer))
