@@ -22,6 +22,7 @@
 #include "broker_version.h"
 
 #include <array>
+#include <cmath>
 #include <copyfile.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -227,9 +228,13 @@ etcpal::LogTimestamp MacBrokerOsInterface::GetLogTimestamp()
   CFTimeZoneRef   time_zone = CFTimeZoneCopySystem();
   CFAbsoluteTime  abs_time = CFAbsoluteTimeGetCurrent();
   CFGregorianDate date = CFAbsoluteTimeGetGregorianDate(abs_time, time_zone);
+  unsigned int    msec = static_cast<unsigned int>(fmod(date.second, 1.0) * 1000.0);
   CFTimeInterval  utc_offset = CFTimeZoneGetSecondsFromGMT(time_zone, abs_time) / 60.0;
 
-  return etcpal::LogTimestamp(date.year, date.month, date.day, date.hour, date.minute, date.second, 0u, utc_offset);
+  return etcpal::LogTimestamp(static_cast<unsigned int>(date.year), static_cast<unsigned int>(date.month),
+                              static_cast<unsigned int>(date.day), static_cast<unsigned int>(date.hour),
+                              static_cast<unsigned int>(date.minute), static_cast<unsigned int>(date.second), msec,
+                              static_cast<int>(utc_offset));
 }
 
 void MacBrokerOsInterface::HandleLogMessage(const EtcPalLogStrings& strings)
