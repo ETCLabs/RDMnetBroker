@@ -25,6 +25,9 @@
 class MacBrokerOsInterface final : public BrokerOsInterface
 {
 public:
+  MacBrokerOsInterface() = default;
+  ~MacBrokerOsInterface();
+
   // BrokerOsInterface
   std::string                           GetLogFilePath() const override;
   bool                                  OpenLogFile() override;
@@ -36,8 +39,6 @@ public:
 
 private:
   std::ofstream log_stream_;
-
-  etcpal::Error RotateLogs();
 };
 
 #endif  // WIN_BROKER_OS_INTERFACE_H_

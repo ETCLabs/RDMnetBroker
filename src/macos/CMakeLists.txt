@@ -7,7 +7,7 @@ add_executable(RDMnetBrokerService
   main.cpp
 )
 set_target_properties(RDMnetBrokerService PROPERTIES CXX_STANDARD 17)
-target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore)
+target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore "-framework CoreFoundation")
 
 install(TARGETS RDMnetBrokerService
   RUNTIME DESTINATION libexec  # Apple docs recommend /usr/local/libexec
