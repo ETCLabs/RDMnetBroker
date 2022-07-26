@@ -49,7 +49,7 @@ macos-build:
     - mkdir build
     - cd build
     - cmake -DCMAKE_INSTALL_PREFIX=install ${GLOBAL_CMAKE_OPTIONS} ..
-    - cmake --build .
+    - cmake --build . --config Release -j
     - cmake -P cmake_install.cmake
     - ctest --output-on-failure
     - cd ..

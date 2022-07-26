@@ -30,8 +30,6 @@ int main()
   sigaddset(&term_signal, SIGTERM);
   sigprocmask(SIG_BLOCK, &term_signal, nullptr);
 
-  // TODO: Handle args
-
   BrokerService service;
   if (!service.Init())
     return 1;
