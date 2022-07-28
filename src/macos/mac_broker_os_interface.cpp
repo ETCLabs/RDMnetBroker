@@ -35,118 +35,38 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
-class PathComponent
-{
-public:
-  PathComponent(const std::string& name, mode_t mode) : name_(name), mode_(mode) {}
-
-  const std::string& name() const { return name_; }
-  mode_t             mode() const { return mode_; }
-
-private:
-  std::string  name_;
-  const mode_t mode_;
-};
-
-class FilePath
-{
-public:
-  FilePath(const std::vector<PathComponent>& directory, const PathComponent& file) : directory_(directory), file_(file)
-  {
-  }
-
-  std::string ToString() const;
-
-  const std::vector<PathComponent>& directory() const { return directory_; }
-  const PathComponent&              file() const { return file_; }
-
-private:
-  std::vector<PathComponent> directory_;
-  PathComponent              file_;
-};
-
-// Directory mode = rwxr-xr-x to match precedent set by /usr
 // Log file mode = rw-r--r-- because it only needs to be written to by the service
-// Config file mode = rw-rw-rw- to allow configuration of the service without elevated permissions
-static constexpr mode_t kDirectoryMode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
 static constexpr mode_t kLogFileMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-static constexpr mode_t kConfigFileMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 
-// Files are put into an RDMnetBroker folder in each respective location. Not only does this help with organization, but
-// it also helps support increased file permissions (i.e. setting kConfigFileMode on parent RDMnetBroker directory).
-static const FilePath kLogPath = FilePath(
-    {PathComponent("usr", kDirectoryMode), PathComponent("local", kDirectoryMode), PathComponent("var", kDirectoryMode),
-     PathComponent("log", kDirectoryMode), PathComponent("RDMnetBroker", kDirectoryMode)},
-    PathComponent("broker.log", kLogFileMode));
-static const FilePath kConfigPath =
-    FilePath({PathComponent("usr", kDirectoryMode), PathComponent("local", kDirectoryMode),
-              PathComponent("etc", kDirectoryMode), PathComponent("RDMnetBroker", kDirectoryMode | kConfigFileMode)},
-             PathComponent("broker.conf", kConfigFileMode));
+static constexpr char* kLogFilePath = "/usr/local/var/log/RDMnetBroker/broker.log";
+static constexpr char* kConfigFilePath = "/usr/local/etc/RDMnetBroker/broker.conf";
 
 static constexpr int kMaxLogRotationFiles = 5;
 
-bool CreateFoldersAsNeeded(const FilePath& path)
+bool SetUpLogFile()
 {
-  std::string mkdir_path("/");
-  for (const auto& folder : path.directory())
-  {
-    mkdir_path.append(folder.name());
-    mkdir_path.append("/");  // Make sure there's a trailing / so mkdir_path is considered a directory
+  // The installer has already set up the log directory. We only need to create the file here.
+  bool success = false;
 
-    bool folder_exists = (access(mkdir_path.c_str(), F_OK) == 0);
-    if (!folder_exists)
-    {
-      if (mkdir(mkdir_path.c_str(), folder.mode()) == -1)
-        return false;
+  // Call open for this to prevent truncation of an existing log.
+  int fd = open(kLogFilePath, O_RDWR | O_CREAT, kLogFileMode);
+  if (fd >= 0)
+    success = (close(fd) == 0);
 
-      // We might need to force extra write permissions
-      if (chmod(mkdir_path.c_str(), folder.mode()) == -1)
-        return false;
-    }
-  }
+  if (!success)
+    std::cout << "FATAL: Could not create file '" << kLogFilePath << "' (" << strerror(errno) << ").\n";
 
-  return true;
+  return success;
 }
 
-bool CreateFileIfNeeded(const FilePath& path)
-{
-  // Call open for this to prevent truncation.
-  int fd = open(path.ToString().c_str(), O_RDWR | O_CREAT, path.file().mode());
-
-  if (fd == -1)
-    return false;
-
-  if (close(fd) == -1)
-    return false;
-
-  // We might need to force extra write permissions
-  return (chmod(path.ToString().c_str(), path.file().mode()) == 0);
-}
-
-bool SetUpFileAtPath(const FilePath& path)
-{
-  if (!CreateFoldersAsNeeded(path))
-  {
-    std::cout << "FATAL: Could not create directory for '" << path.ToString() << "' (" << strerror(errno) << ").\n";
-    return false;
-  }
-
-  if (!CreateFileIfNeeded(path))
-  {
-    std::cout << "FATAL: Could not create file '" << path.ToString() << "' (" << strerror(errno) << ").\n";
-    return false;
-  }
-
-  return true;
-}
-
-bool RotateLog(const FilePath& src_path, const FilePath& dest_path)
+bool RotateLog(const std::string& src_path, const std::string& dest_path)
 {
   bool success = false;
-  int  src_fd = open(src_path.ToString().c_str(), O_RDONLY);
+
+  int src_fd = open(src_path.c_str(), O_RDONLY);
   if (src_fd >= 0)
   {
-    int dest_fd = creat(dest_path.ToString().c_str(), dest_path.file().mode());
+    int dest_fd = creat(dest_path.c_str(), kLogFileMode);
     if (dest_fd >= 0)
     {
       if (fcopyfile(src_fd, dest_fd, nullptr, COPYFILE_ALL) == 0)
@@ -165,10 +85,9 @@ bool RotateLogs()
 {
   auto LogBackupFilePath = [&](int rotate_number) {
     if (rotate_number == 0)
-      return kLogPath;
+      return std::string(kLogFilePath);
 
-    return FilePath(kLogPath.directory(), PathComponent(kLogPath.file().name() + "." + std::to_string(rotate_number),
-                                                        kLogPath.file().mode()));
+    return (std::string(kLogFilePath) + "." + std::to_string(rotate_number));
   };
 
   // Determine the highest log backup file that already exists on the system
@@ -176,7 +95,7 @@ bool RotateLogs()
   for (; rotate_number < kMaxLogRotationFiles; ++rotate_number)
   {
     auto backup_path = LogBackupFilePath(rotate_number);
-    bool file_exists = (access(backup_path.ToString().c_str(), F_OK) == 0);
+    bool file_exists = (access(backup_path.c_str(), F_OK) == 0);
     if (!file_exists)
       break;
   }
@@ -191,27 +110,6 @@ bool RotateLogs()
   return true;
 }
 
-void InitializeNewConfig()
-{
-  // Assuming the file has already been successfully created with permissions by this point.
-  std::ofstream conf_file(kConfigPath.ToString());
-  conf_file << "{\n}\n";  // Initialize with the empty JSON object {}
-  conf_file.close();
-}
-
-std::string FilePath::ToString() const
-{
-  std::string result = "/";
-  for (const auto& folder : directory_)
-  {
-    result.append(folder.name());
-    result.append("/");
-  }
-
-  result.append(file_.name());
-  return result;
-}
-
 MacBrokerOsInterface::~MacBrokerOsInterface()
 {
   if (log_stream_.is_open())
@@ -220,12 +118,12 @@ MacBrokerOsInterface::~MacBrokerOsInterface()
 
 std::string MacBrokerOsInterface::GetLogFilePath() const
 {
-  return kLogPath.ToString();
+  return kLogFilePath;
 }
 
 bool MacBrokerOsInterface::OpenLogFile()
 {
-  if (!SetUpFileAtPath(kLogPath))
+  if (!SetUpLogFile())
     return false;
 
   bool rotate_error = !RotateLogs();
@@ -250,21 +148,9 @@ bool MacBrokerOsInterface::OpenLogFile()
 
 std::pair<std::string, std::ifstream> MacBrokerOsInterface::GetConfFile(etcpal::Logger& log)
 {
-  bool new_config = (access(kConfigPath.ToString().c_str(), F_OK) != 0);
-
-  if (!SetUpFileAtPath(kConfigPath))
-  {
-    log.Critical("FATAL: creating config file failed with error: \"%s\"\n", strerror(errno));
-    return std::make_pair(std::string{}, std::ifstream{});
-  }
-
-  if (new_config)
-    InitializeNewConfig();
-
-  std::string   conf_file_path = kConfigPath.ToString();
-  std::ifstream conf_file(conf_file_path);
-
-  return std::make_pair(conf_file_path, std::move(conf_file));
+  // The installer has already set up the config directory and file.
+  std::ifstream conf_file(kConfigFilePath);
+  return std::make_pair(kConfigFilePath, std::move(conf_file));
 }
 
 etcpal::LogTimestamp MacBrokerOsInterface::GetLogTimestamp()
