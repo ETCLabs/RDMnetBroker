@@ -53,11 +53,11 @@ macos-build:
     - cmake -P cmake_install.cmake
     - ctest --output-on-failure
     - cd ..
-#    - python3 tools/install/macos/macos_build_package.py
+    - python3 tools/install/macos/macos_build_package.py
   artifacts:
     when: always
-#    paths:
-#      - RDMnetBroker.pkg
+    paths:
+      - RDMnetBroker.pkg
     reports:
       junit: build/tests/test-results/*.xml
 
