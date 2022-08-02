@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ class MockBrokerOsInterface : public BrokerOsInterface
 public:
   MOCK_METHOD(std::string, GetLogFilePath, (), (const override));
   MOCK_METHOD(bool, OpenLogFile, (), (override));
-  MOCK_METHOD((std::pair<std::string, std::ifstream>), GetConfFile, (rdmnet::BrokerLog & log), (override));
-  MOCK_METHOD(void, GetLogTime, (EtcPalLogTimeParams & time), (override));
-  MOCK_METHOD(void, OutputLogMsg, (const std::string& msg), (override));
+  MOCK_METHOD((std::pair<std::string, std::ifstream>), GetConfFile, (etcpal::Logger & log), (override));
+  MOCK_METHOD(etcpal::LogTimestamp, GetLogTimestamp, (), (override));
+  MOCK_METHOD(void, HandleLogMessage, (const EtcPalLogStrings& strings), (override));
 };
 
 class TestBrokerShell : public testing::Test
@@ -46,7 +46,7 @@ protected:
   }
 
   testing::NiceMock<MockBrokerOsInterface> os_interface_;
-  BrokerShell shell_{os_interface_};
+  BrokerShell                              shell_{os_interface_};
 };
 
 // TODO - if these tests don't work as expected, we might start a real broker and enter an infinite

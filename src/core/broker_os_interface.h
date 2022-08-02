@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,17 @@
 #include <fstream>
 #include <string>
 #include <utility>
-#include "rdmnet/broker/log.h"
+#include "etcpal/cpp/log.h"
 #include "broker_config.h"
 
-class BrokerOsInterface : public rdmnet::BrokerLogInterface
+class BrokerOsInterface : public etcpal::LogMessageHandler
 {
 public:
   virtual ~BrokerOsInterface() = default;
 
-  virtual std::string GetLogFilePath() const = 0;
-  virtual bool OpenLogFile() = 0;
-  virtual std::pair<std::string, std::ifstream> GetConfFile(rdmnet::BrokerLog& log) = 0;
+  virtual std::string                           GetLogFilePath() const = 0;
+  virtual bool                                  OpenLogFile() = 0;
+  virtual std::pair<std::string, std::ifstream> GetConfFile(etcpal::Logger& log) = 0;
 };
 
 #endif  // BROKER_OS_INTERFACE_H_

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size)
 void InstallService()
 {
   constexpr size_t kErrMsgSize = 256;
-  wchar_t error_msg[kErrMsgSize];
+  wchar_t          error_msg[kErrMsgSize];
 
   wchar_t my_file_name[MAX_PATH];
   if (GetModuleFileName(nullptr, my_file_name, MAX_PATH) == 0)
@@ -100,7 +100,7 @@ void InstallService()
 
     // Set the service description
     // Sigh... it's too much to ask for these APIs to be const-correct, isn't it?
-    std::wstring non_const_description = kServiceDescription;
+    std::wstring        non_const_description = kServiceDescription;
     SERVICE_DESCRIPTION service_desc;
     service_desc.lpDescription = non_const_description.data();
     ChangeServiceConfig2(service_handle, SERVICE_CONFIG_DESCRIPTION, &service_desc);
@@ -136,7 +136,7 @@ void InstallService()
 void UninstallService()
 {
   constexpr size_t kErrMsgSize = 256;
-  wchar_t error_msg[kErrMsgSize];
+  wchar_t          error_msg[kErrMsgSize];
 
   // Open the local default service control manager database
   SC_HANDLE manager_handle = OpenSCManager(nullptr, nullptr, SC_MANAGER_CONNECT);

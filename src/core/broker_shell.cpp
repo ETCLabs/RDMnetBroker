@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include <cstring>
 #include "etcpal/netint.h"
 #include "etcpal/thread.h"
+#include "rdmnet/cpp/common.h"
 #include "broker_version.h"
 
 bool BrokerShell::Run(bool /*debug_mode*/)
@@ -41,16 +42,21 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
   log_.SetLogMask(broker_config_.log_mask);
 
-  if (!broker_.Startup(broker_config_.settings, this, &log_))
+  if (!rdmnet::Init(log_))
   {
+    log_.Shutdown();
+    return false;
+  }
+
+  if (!broker_.Startup(broker_config_.settings, &log_, this))
+  {
+    rdmnet::Deinit();
     log_.Shutdown();
     return false;
   }
 
   while (true)
   {
-    broker_.Tick();
-
     if (shutdown_requested_)
     {
       break;
@@ -59,17 +65,18 @@ bool BrokerShell::Run(bool /*debug_mode*/)
     {
       restart_requested_ = false;
 
-      auto broker_settings = broker_.GetSettings();
+      auto broker_settings = broker_.settings();
       broker_.Shutdown();
 
       ApplySettingsChanges(broker_settings);
-      broker_.Startup(broker_settings, this, &log_);
+      broker_.Startup(broker_settings, &log_, this);
     }
 
     etcpal_thread_sleep(300);
   }
 
   broker_.Shutdown();
+  rdmnet::Deinit();
   log_.Shutdown();
   return true;
 }
@@ -142,7 +149,7 @@ void BrokerShell::HandleScopeChanged(const std::string& new_scope)
   restart_requested_ = true;
 }
 
-void BrokerShell::ApplySettingsChanges(rdmnet::BrokerSettings& settings)
+void BrokerShell::ApplySettingsChanges(rdmnet::Broker::Settings& settings)
 {
   if (!new_scope_.empty())
   {

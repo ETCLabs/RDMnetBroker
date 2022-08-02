@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public:
   // Run(BrokerService*), the SCM issues a Start command, which results in a call to the OnStart
   // method in the service. This method blocks until the service has stopped.
   static bool RunService(BrokerService* service);
-  int Debug() { return (broker_shell_.Run(true) ? 0 : 1); }
+  int         Debug() { return (broker_shell_.Run(true) ? 0 : 1); }
 
   void SetServiceStatus(DWORD current_state, DWORD win32_error = NO_ERROR, DWORD service_specific_error = 0);
   void PrintVersion() { broker_shell_.PrintVersion(); }
@@ -43,8 +43,8 @@ public:
   BrokerService(const wchar_t* service_name);
 
 private:
-  void WriteEventLogEntry(PWSTR message, WORD type);
-  void WriteErrorLogEntry(PWSTR function_name, DWORD error = GetLastError());
+  void WriteEventLogEntry(PCWSTR message, WORD type);
+  void WriteErrorLogEntry(PCWSTR function_name, DWORD error = GetLastError());
 
   static void WINAPI ServiceCtrlHandler(DWORD control_code);
   static void WINAPI ServiceMain(DWORD argc, LPWSTR* argv);
@@ -55,18 +55,19 @@ private:
 
   static DWORD WINAPI ServiceThread(LPVOID* arg);
 
-  static VOID NETIOAPI_API_ InterfaceChangeCallback(IN PVOID CallerContext, IN PMIB_IPINTERFACE_ROW Row,
+  static VOID NETIOAPI_API_ InterfaceChangeCallback(IN PVOID                 CallerContext,
+                                                    IN PMIB_IPINTERFACE_ROW  Row,
                                                     IN MIB_NOTIFICATION_TYPE NotificationType);
 
   static BrokerService* service_;  // The singleton service instance.
 
   WindowsBrokerOsInterface os_interface_;
-  BrokerShell broker_shell_{os_interface_};
+  BrokerShell              broker_shell_{os_interface_};
 
-  std::wstring name_;                             // The name of the service
-  SERVICE_STATUS status_{};                       // The status of the service
+  std::wstring          name_;                    // The name of the service
+  SERVICE_STATUS        status_{};                // The status of the service
   SERVICE_STATUS_HANDLE status_handle_{nullptr};  // The service status handle
-  HANDLE service_thread_{nullptr};
+  HANDLE                service_thread_{nullptr};
 };
 
 #endif  // BROKER_SERVICE_H_

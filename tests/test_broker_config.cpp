@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ class TestBrokerConfig : public testing::Test
 {
 protected:
   void TestInvalidUnsignedIntValueHelper(const std::string& key);
-  void TestValidUnsignedIntValueHelper(const std::string& key,
-                                       std::function<unsigned int(const rdmnet::BrokerSettings&)> value_getter);
+  void TestValidUnsignedIntValueHelper(const std::string&                                           key,
+                                       std::function<unsigned int(const rdmnet::Broker::Settings&)> value_getter);
 
   void TestDnsSdInvalidStringValueHelper(const std::string& key);
-  void TestDnsSdValidStringValueHelper(const std::string& key,
-                                       std::function<std::string(const rdmnet::BrokerSettings&)> value_getter);
+  void TestDnsSdValidStringValueHelper(const std::string&                                          key,
+                                       std::function<std::string(const rdmnet::Broker::Settings&)> value_getter);
 
   BrokerConfig config_;
 };
@@ -44,18 +44,15 @@ protected:
 TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 {
   const std::string kCid = "4958ac8f-cd5e-42cd-ab7e-9797b0efd3ac";
-  const uint16_t kDynamicUidManu = 25972;
+  const uint16_t    kDynamicUidManu = 25972;
 
   const std::string kDnsServiceInstanceName = "My ETC RDMnet Broker";
   const std::string kDnsManufacturer = "ETC";
   const std::string kDnsModel = "RDMnet Broker";
 
-  const std::string kScope = "default";
-  const uint16_t kListenPort = 8888;
-  const std::set<etcpal::MacAddr> kListenMacs = {etcpal::MacAddr({0x00, 0xc0, 0x16, 0x01, 0x23, 0x45}),
-                                                 etcpal::MacAddr({0x00, 0xc0, 0x16, 0x33, 0x33, 0x33})};
-  const std::set<etcpal::IpAddr> kListenAddrs = {etcpal::IpAddr::FromString("10.101.1.2"),
-                                                 etcpal::IpAddr::FromString("2001:db8::1234:5678")};
+  const std::string              kScope = "default";
+  const uint16_t                 kListenPort = 8888;
+  const std::vector<std::string> kListenInterfaces = {"eth0", "eth1", "wlan0", "wlan1"};
 
   const unsigned int kMaxConnections = 20000;
   const unsigned int kMaxControllers = 1000;
@@ -81,15 +78,10 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 
       "scope": ")" + kScope + R"(",
       "listen_port": )" + std::to_string(kListenPort) + R"(,
-      "listen_macs": [ )" + std::accumulate(std::next(kListenMacs.begin()), kListenMacs.end(),
-                                            "\"" + kListenMacs.begin()->ToString() + "\"",
+      "listen_interfaces": [ )" + std::accumulate(std::next(kListenInterfaces.begin()), kListenInterfaces.end(),
+                                            "\"" + *kListenInterfaces.begin() + "\"",
                                             [](std::string a, auto b) {
-                                              return std::move(a) + ", \"" + b.ToString() + "\"";
-                                            }) + R"( ],
-      "listen_addrs": [ )" + std::accumulate(std::next(kListenAddrs.begin()), kListenAddrs.end(),
-                                            "\"" + kListenAddrs.begin()->ToString() + "\"",
-                                            [](std::string a, auto b) {
-                                              return std::move(a) + ", \"" + b.ToString() + "\"";
+                                              return std::move(a) + ", \"" + b + "\"";
                                             }) + R"( ],
 
       "log_level": "err",
@@ -109,9 +101,8 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 
   EXPECT_EQ(config_.settings.cid.ToString(), kCid);
 
-  EXPECT_EQ(config_.settings.uid_type, rdmnet::BrokerSettings::kDynamicUid);
-  EXPECT_TRUE(RDMNET_UID_IS_DYNAMIC_UID_REQUEST(&config_.settings.uid));
-  EXPECT_EQ(RDM_GET_MANUFACTURER_ID(&config_.settings.uid), kDynamicUidManu);
+  EXPECT_TRUE(config_.settings.uid.IsDynamicUidRequest());
+  EXPECT_EQ(config_.settings.uid.manufacturer_id(), kDynamicUidManu);
 
   EXPECT_EQ(config_.settings.dns.service_instance_name, kDnsServiceInstanceName);
   EXPECT_EQ(config_.settings.dns.manufacturer, kDnsManufacturer);
@@ -119,17 +110,16 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 
   EXPECT_EQ(config_.settings.scope, kScope);
   EXPECT_EQ(config_.settings.listen_port, kListenPort);
-  EXPECT_EQ(config_.settings.listen_macs, kListenMacs);
-  EXPECT_EQ(config_.settings.listen_addrs, kListenAddrs);
+  EXPECT_EQ(config_.settings.listen_interfaces, kListenInterfaces);
 
   EXPECT_EQ(config_.log_mask, ETCPAL_LOG_UPTO(ETCPAL_LOG_ERR));
 
-  EXPECT_EQ(config_.settings.max_connections, kMaxConnections);
-  EXPECT_EQ(config_.settings.max_controllers, kMaxControllers);
-  EXPECT_EQ(config_.settings.max_controller_messages, kMaxControllerMessages);
-  EXPECT_EQ(config_.settings.max_devices, kMaxDevices);
-  EXPECT_EQ(config_.settings.max_device_messages, kMaxDeviceMessages);
-  EXPECT_EQ(config_.settings.max_reject_connections, kMaxRejectConnections);
+  EXPECT_EQ(config_.settings.limits.connections, kMaxConnections);
+  EXPECT_EQ(config_.settings.limits.controllers, kMaxControllers);
+  EXPECT_EQ(config_.settings.limits.controller_messages, kMaxControllerMessages);
+  EXPECT_EQ(config_.settings.limits.devices, kMaxDevices);
+  EXPECT_EQ(config_.settings.limits.device_messages, kMaxDeviceMessages);
+  EXPECT_EQ(config_.settings.limits.reject_connections, kMaxRejectConnections);
 }
 
 TEST_F(TestBrokerConfig, InvalidJsonShouldFailWithoutThrowing)
@@ -200,8 +190,8 @@ TEST_F(TestBrokerConfig, CidCreatedIfNotPresentInConfig)
 
 TEST_F(TestBrokerConfig, ValidCidParsedCorrectly)
 {
-  const std::string kValidCid = "1ef44b69-2185-4e3a-945f-a5a264c405e8";
-  const std::string kConfigContainingValidCid = R"( { "cid": ")" + kValidCid + R"( " } )";
+  const std::string  kValidCid = "1ef44b69-2185-4e3a-945f-a5a264c405e8";
+  const std::string  kConfigContainingValidCid = R"( { "cid": ")" + kValidCid + R"( " } )";
   std::istringstream test_stream(kConfigContainingValidCid);
   EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
 
@@ -280,20 +270,18 @@ TEST_F(TestBrokerConfig, UidDynamicIfNotPresentInConfig)
   std::istringstream test_stream(kUidNotPresent);
   EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
 
-  EXPECT_EQ(config_.settings.uid_type, rdmnet::BrokerSettings::kDynamicUid);
-  EXPECT_TRUE(RDMNET_UID_IS_DYNAMIC_UID_REQUEST(&config_.settings.uid));
-  EXPECT_NE(config_.settings.uid.manu, 0x8000u);
+  EXPECT_TRUE(config_.settings.uid.IsDynamicUidRequest());
+  EXPECT_NE(config_.settings.uid.manufacturer_id(), 0x8000u);
 
   test_stream = std::istringstream(kUidIsNull);
   EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
-  EXPECT_EQ(config_.settings.uid_type, rdmnet::BrokerSettings::kDynamicUid);
-  EXPECT_TRUE(RDMNET_UID_IS_DYNAMIC_UID_REQUEST(&config_.settings.uid));
-  EXPECT_NE(config_.settings.uid.manu, 0x8000u);
+  EXPECT_TRUE(config_.settings.uid.IsDynamicUidRequest());
+  EXPECT_NE(config_.settings.uid.manufacturer_id(), 0x8000u);
 }
 
 TEST_F(TestBrokerConfig, ValidUidParsedCorrectly)
 {
-  RdmUid valid_static_uid = {16000, 3333333};
+  rdm::Uid          valid_static_uid = rdm::Uid::Static(16000, 3333333);
   const std::string kValidStaticUidConfig = R"( {
     "uid": {
       "type": "static",
@@ -302,8 +290,7 @@ TEST_F(TestBrokerConfig, ValidUidParsedCorrectly)
     }
   } )";
 
-  RdmUid valid_dynamic_uid;
-  RDMNET_INIT_DYNAMIC_UID_REQUEST(&valid_dynamic_uid, 17000);
+  rdm::Uid          valid_dynamic_uid = rdm::Uid::DynamicUidRequest(17000);
   const std::string kValidDynamicUidConfig = R"( {
     "uid": {
       "type": "dynamic",
@@ -316,14 +303,12 @@ TEST_F(TestBrokerConfig, ValidUidParsedCorrectly)
 
   // Correctly parsed static UID
   EXPECT_EQ(config_.settings.uid, valid_static_uid);
-  EXPECT_EQ(config_.settings.uid_type, rdmnet::BrokerSettings::kStaticUid);
 
   test_stream = std::istringstream(kValidDynamicUidConfig);
   EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
 
   // Correctly parsed dynamic UID
   EXPECT_EQ(config_.settings.uid, valid_dynamic_uid);
-  EXPECT_EQ(config_.settings.uid_type, rdmnet::BrokerSettings::kDynamicUid);
 }
 
 void TestBrokerConfig::TestDnsSdInvalidStringValueHelper(const std::string& key)
@@ -351,7 +336,8 @@ void TestBrokerConfig::TestDnsSdInvalidStringValueHelper(const std::string& key)
 }
 
 void TestBrokerConfig::TestDnsSdValidStringValueHelper(
-    const std::string& key, std::function<std::string(const rdmnet::BrokerSettings&)> value_getter)
+    const std::string&                                          key,
+    std::function<std::string(const rdmnet::Broker::Settings&)> value_getter)
 {
   const std::string kTestString = "Broker String Name From Unit Tests";
   const std::string kValidConfig = R"( { "dns_sd": { ")" + key + R"(": ")" + kTestString + R"(" } } )";
@@ -476,28 +462,24 @@ TEST_F(TestBrokerConfig, ValidListenPortParsedCorrectly)
   }
 }
 
-TEST_F(TestBrokerConfig, InvalidMacListShouldFail)
+TEST_F(TestBrokerConfig, InvalidInterfaceListShouldFail)
 {
   // clang-format off
   const std::vector<std::string> kInvalidStrings =
   {
     // Invalid types
-    R"( { "listen_macs": 0 } )",
-    R"( { "listen_macs": false } )",
-    R"( { "listen_macs": true } )",
-    R"( { "listen_macs": {} } )",
-    R"( { "listen_macs": "string" } )",
+    R"( { "listen_interfaces": 0 } )",
+    R"( { "listen_interfaces": false } )",
+    R"( { "listen_interfaces": true } )",
+    R"( { "listen_interfaces": {} } )",
+    R"( { "listen_interfaces": "string" } )",
     // Invalid values
-    R"( { "listen_macs": [ 0 ] } )",
-    R"( { "listen_macs": [ false ] } )",
-    R"( { "listen_macs": [ true ] } )",
-    R"( { "listen_macs": [ { "mac": "00:c0:16:30:30:31" } ] } )",
-    R"( { "listen_macs": [ [ "00:c0:16:30:30:31" ] ] } )",
-    R"( { "listen_macs": [ "00:c0:16:30:30:31", 20, "00:c0:16:30:30:32" ] } )",
-    R"( { "listen_macs": [ "00:c0:16:30:30:3" ] } )",
-    R"( { "listen_macs": [ ":00:c0:16:30:30:31:" ] } )",
-    R"( { "listen_macs": [ "00:c0:16::30:30:31" ] } )",
-    // R"( { "listen_macs": [ "00:c0:16:30:30:31:32" ] } )"
+    R"( { "listen_interfaces": [ 0 ] } )",
+    R"( { "listen_interfaces": [ false ] } )",
+    R"( { "listen_interfaces": [ true ] } )",
+    R"( { "listen_interfaces": [ { "iface": "eth0" } ] } )",
+    R"( { "listen_interfaces": [ [ "eth0" ] ] } )",
+    R"( { "listen_interfaces": [ "eth0", 20, "wlan0" ] } )"
   };
   // clang-format on
 
@@ -509,59 +491,15 @@ TEST_F(TestBrokerConfig, InvalidMacListShouldFail)
   }
 }
 
-TEST_F(TestBrokerConfig, ValidMacListParsedSuccessfully)
+TEST_F(TestBrokerConfig, ValidInterfaceListParsedSuccessfully)
 {
-  const std::set kTestMacList = {etcpal::MacAddr({0, 1, 2, 3, 4, 5}), etcpal::MacAddr({5, 4, 3, 2, 1, 0})};
-  const std::string kValidConfig = R"( { "listen_macs": [ ")" + kTestMacList.begin()->ToString() + R"(", ")" +
-                                   std::next(kTestMacList.begin())->ToString() + R"(" ] } )";
+  const std::vector<std::string> kTestInterfaceList = {"eth0", "wlan0"};
+  const std::string kValidConfig = R"( { "listen_interfaces": [ ")" + *kTestInterfaceList.begin() + R"(", ")" +
+                                   *std::next(kTestInterfaceList.begin()) + R"(" ] } )";
 
   std::istringstream test_stream(kValidConfig);
   ASSERT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
-  EXPECT_EQ(config_.settings.listen_macs, kTestMacList);
-}
-
-TEST_F(TestBrokerConfig, InvalidIpAddrListShouldFail)
-{
-  // clang-format off
-  const std::vector<std::string> kInvalidStrings =
-  {
-    // Invalid types
-    R"( { "listen_addrs": 0 } )",
-    R"( { "listen_addrs": false } )",
-    R"( { "listen_addrs": true } )",
-    R"( { "listen_addrs": {} } )",
-    R"( { "listen_addrs": "string" } )",
-    // Invalid values
-    R"( { "listen_addrs": [ 0 ] } )",
-    R"( { "listen_addrs": [ false ] } )",
-    R"( { "listen_addrs": [ true ] } )",
-    R"( { "listen_addrs": [ { "addr": "10.101.2.3" } ] } )",
-    R"( { "listen_addrs": [ [ "10.101.2.3" ] ] } )",
-    R"( { "listen_addrs": [ "10.101.2.3", 20, "2001:db8::1234:5678" ] } )",
-    R"( { "listen_addrs": [ "10.101.2." ] } )",
-    R"( { "listen_addrs": [ ".10.101.2.3." ] } )",
-    R"( { "listen_addrs": [ "10.101..2.3" ] } )",
-    R"( { "listen_addrs": [ "2001::db8::1234" ] } )",
-  };
-  // clang-format on
-
-  for (const auto& invalid_input : kInvalidStrings)
-  {
-    std::istringstream test_stream(invalid_input);
-    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kInvalidSetting)
-        << "Input tested: " << invalid_input;
-  }
-}
-
-TEST_F(TestBrokerConfig, ValidIpAddrListParsedSuccessfully)
-{
-  const std::set kTestAddrList = {etcpal::IpAddr(0xdeadbeef), etcpal::IpAddr::FromString("2001:db8::1234:5678")};
-  const std::string kValidConfig = R"( { "listen_addrs": [ ")" + kTestAddrList.begin()->ToString() + R"(", ")" +
-                                   std::next(kTestAddrList.begin())->ToString() + R"(" ] } )";
-
-  std::istringstream test_stream(kValidConfig);
-  ASSERT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
-  EXPECT_EQ(config_.settings.listen_addrs, kTestAddrList);
+  EXPECT_EQ(config_.settings.listen_interfaces, kTestInterfaceList);
 }
 
 TEST_F(TestBrokerConfig, InvalidLogLevelShouldFail)
@@ -634,7 +572,8 @@ void TestBrokerConfig::TestInvalidUnsignedIntValueHelper(const std::string& key)
 }
 
 void TestBrokerConfig::TestValidUnsignedIntValueHelper(
-    const std::string& key, std::function<unsigned int(const rdmnet::BrokerSettings&)> value_getter)
+    const std::string&                                           key,
+    std::function<unsigned int(const rdmnet::Broker::Settings&)> value_getter)
 {
   // clang-format off
   const std::vector<std::pair<std::string, unsigned int>> kValidIntStrings = {
@@ -662,7 +601,7 @@ TEST_F(TestBrokerConfig, InvalidMaxConnectionsValueShouldFail)
 
 TEST_F(TestBrokerConfig, ValidMaxConnectionsParsedCorrectly)
 {
-  TestValidUnsignedIntValueHelper("max_connections", [](const auto& settings) { return settings.max_connections; });
+  TestValidUnsignedIntValueHelper("max_connections", [](const auto& settings) { return settings.limits.connections; });
 }
 
 TEST_F(TestBrokerConfig, InvalidMaxControllersValueShouldFail)
@@ -672,7 +611,7 @@ TEST_F(TestBrokerConfig, InvalidMaxControllersValueShouldFail)
 
 TEST_F(TestBrokerConfig, ValidMaxControllersParsedCorrectly)
 {
-  TestValidUnsignedIntValueHelper("max_controllers", [](const auto& settings) { return settings.max_controllers; });
+  TestValidUnsignedIntValueHelper("max_controllers", [](const auto& settings) { return settings.limits.controllers; });
 }
 
 TEST_F(TestBrokerConfig, InvalidMaxControllerMessagesValueShouldFail)
@@ -683,7 +622,7 @@ TEST_F(TestBrokerConfig, InvalidMaxControllerMessagesValueShouldFail)
 TEST_F(TestBrokerConfig, ValidMaxControllerMessagesParsedCorrectly)
 {
   TestValidUnsignedIntValueHelper("max_controller_messages",
-                                  [](const auto& settings) { return settings.max_controller_messages; });
+                                  [](const auto& settings) { return settings.limits.controller_messages; });
 }
 
 TEST_F(TestBrokerConfig, InvalidMaxDevicesValueShouldFail)
@@ -693,7 +632,7 @@ TEST_F(TestBrokerConfig, InvalidMaxDevicesValueShouldFail)
 
 TEST_F(TestBrokerConfig, ValidMaxDevicesParsedCorrectly)
 {
-  TestValidUnsignedIntValueHelper("max_devices", [](const auto& settings) { return settings.max_devices; });
+  TestValidUnsignedIntValueHelper("max_devices", [](const auto& settings) { return settings.limits.devices; });
 }
 
 TEST_F(TestBrokerConfig, InvalidMaxDeviceMessagesValueShouldFail)
@@ -704,7 +643,7 @@ TEST_F(TestBrokerConfig, InvalidMaxDeviceMessagesValueShouldFail)
 TEST_F(TestBrokerConfig, ValidMaxDeviceMessagesParsedCorrectly)
 {
   TestValidUnsignedIntValueHelper("max_device_messages",
-                                  [](const auto& settings) { return settings.max_device_messages; });
+                                  [](const auto& settings) { return settings.limits.device_messages; });
 }
 
 TEST_F(TestBrokerConfig, InvalidMaxRejectConnectionsValueShouldFail)
@@ -715,5 +654,5 @@ TEST_F(TestBrokerConfig, InvalidMaxRejectConnectionsValueShouldFail)
 TEST_F(TestBrokerConfig, ValidMaxRejectConnectionsParsedCorrectly)
 {
   TestValidUnsignedIntValueHelper("max_reject_connections",
-                                  [](const auto& settings) { return settings.max_reject_connections; });
+                                  [](const auto& settings) { return settings.limits.reject_connections; });
 }

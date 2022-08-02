@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@
 #include <string>
 #include "etcpal/cpp/uuid.h"
 #include "etcpal/inet.h"
-#include "etcpal/log.h"
+#include "etcpal/cpp/log.h"
 #include "etcpal/netint.h"
-#include "rdmnet/broker.h"
+#include "rdmnet/cpp/broker.h"
 #include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
@@ -44,19 +44,19 @@ public:
     kOk
   };
 
-  rdmnet::BrokerSettings settings;
-  int log_mask{ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO)};
+  rdmnet::Broker::Settings settings;
+  int                      log_mask{ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO)};
 
-  [[nodiscard]] ParseResult Read(std::istream& stream, rdmnet::BrokerLog* log = nullptr);
-  void SetDefaults();
+  [[nodiscard]] ParseResult Read(std::istream& stream, etcpal::Logger* log = nullptr);
+  void                      SetDefaults();
 
   [[nodiscard]] const etcpal::Uuid& default_cid() const { return default_cid_; }
 
 private:
-  json current_;
+  json         current_;
   etcpal::Uuid default_cid_{etcpal::Uuid::OsPreferred()};
 
-  [[nodiscard]] ParseResult ValidateCurrent(rdmnet::BrokerLog* log);
+  [[nodiscard]] ParseResult ValidateCurrent(etcpal::Logger* log);
 };
 
 #endif  // BROKER_CONFIG_H_

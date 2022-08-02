@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ BrokerService* BrokerService::service_{nullptr};
 
 // The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
 // event is passed along to the BrokerShell instance, which restarts the broker.
-VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID CallerContext, IN PMIB_IPINTERFACE_ROW Row,
+VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID                 CallerContext,
+                                                          IN PMIB_IPINTERFACE_ROW  Row,
                                                           IN MIB_NOTIFICATION_TYPE NotificationType)
 {
   (void)CallerContext;
@@ -235,7 +236,7 @@ void BrokerService::SetServiceStatus(DWORD current_state, DWORD win32_error, DWO
   ::SetServiceStatus(status_handle_, &status_);
 }
 
-void BrokerService::WriteEventLogEntry(PWSTR message, WORD type)
+void BrokerService::WriteEventLogEntry(PCWSTR message, WORD type)
 {
   HANDLE event_src_handle = RegisterEventSource(NULL, name_.c_str());
   if (event_src_handle)
@@ -259,10 +260,10 @@ void BrokerService::WriteEventLogEntry(PWSTR message, WORD type)
   }
 }
 
-void BrokerService::WriteErrorLogEntry(PWSTR function_name, DWORD error)
+void BrokerService::WriteErrorLogEntry(PCWSTR function_name, DWORD error)
 {
   constexpr size_t kMsgSize = 260;
-  wchar_t message[kMsgSize];
+  wchar_t          message[kMsgSize];
   StringCchPrintf(message, kMsgSize, L"%s failed with error 0x%08lx", function_name, error);
   WriteEventLogEntry(message, EVENTLOG_ERROR_TYPE);
 }

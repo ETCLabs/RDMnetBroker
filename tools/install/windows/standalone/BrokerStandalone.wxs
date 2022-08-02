@@ -5,7 +5,8 @@
   <?include GeneratedFiles\vcredist.wxi ?>
   <?include GeneratedFiles\mdnsmerge.wxi ?>
 
-  <?define VcRedistMergeModulex86 = "$(var.VcRedistInstallLoc)\MergeModules\Microsoft_VC141_CRT_x86.msm" ?>
+  <?define VcRedistMergeModulex64 = "$(var.VcRedistInstallLoc)\MergeModules\Microsoft_VC142_CRT_x64.msm" ?>
+  <?define VcRedistMergeModulex86 = "$(var.VcRedistInstallLoc)\MergeModules\Microsoft_VC142_CRT_x86.msm" ?>
 
   <!-- This variable should NEVER BE CHANGED at any point in the product's lifecycle! -->
   <!-- It will muck with Windows installer logic. You have been warned. -->
@@ -34,17 +35,29 @@
     required dependencies - the mDNSWindows and VCRedist merge modules.
     -->
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Merge Id="VcRedistx86" SourceFile="$(var.VcRedistMergeModulex86)" DiskId="1" Language="0" />
+      <Merge Id="VCRedistx86" SourceFile="$(var.VcRedistMergeModulex86)" DiskId="1" Language="0" />
       <Merge Id="mDNSResponder" SourceFile="$(var.mDNSMergeModule)" DiskId="1" Language="0" />
-      <Merge Id="EtcRdmnetBroker" SourceFile="..\merge\bin\$(var.Configuration)\EtcRdmnetBroker.msm"
-          DiskId="1" Language="0" />
+      <?if $(var.Platform) = x64 ?>
+        <Merge Id="VCRedistx64" SourceFile="$(var.VcRedistMergeModulex64)" DiskId="1" Language="0" />
+        <Merge Id="RDMnetBroker_x64" SourceFile="..\merge\bin\$(var.Configuration)\RDMnetBroker_x64.msm"
+            DiskId="1" Language="0" />
+      <?else ?>
+        <Merge Id="RDMnetBroker_x86" SourceFile="..\merge\bin\$(var.Configuration)\RDMnetBroker_x86.msm"
+            DiskId="1" Language="0" />
+      <?endif ?>
     </Directory>
 
     <Feature Id="BrokerFeature" Title="RDMnet Broker Service $(var.VersionNumber)"
         AllowAdvertise="no" Display="hidden" Level="1">
-      <MergeRef Id="VcRedistx86" />
+      <!-- Always install the x86 VCRedist to support mDNSResponder -->
+      <MergeRef Id="VCRedistx86" />
+      <?if $(var.Platform) = x64 ?>
+        <MergeRef Id="VCRedistx64" />
+        <MergeRef Id="RDMnetBroker_x64" />
+      <?else ?>
+        <MergeRef Id="RDMnetBroker_x86" />
+      <?endif ?>
       <MergeRef Id="mDNSResponder" />
-      <MergeRef Id="EtcRdmnetBroker" />
     </Feature>
 
     <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />

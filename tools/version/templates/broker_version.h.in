@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,10 @@
 
 struct BrokerVersion
 {
-  static constexpr int kVersionMajor = @BROKER_VERSION_MAJOR@;
-  static constexpr int kVersionMinor = @BROKER_VERSION_MINOR@;
-  static constexpr int kVersionPatch = @BROKER_VERSION_PATCH@;
-  static constexpr int kVersionBuild = @BROKER_VERSION_BUILD@;
+  static constexpr int kVersionMajor = @VERSION_MAJOR@;
+  static constexpr int kVersionMinor = @VERSION_MINOR@;
+  static constexpr int kVersionPatch = @VERSION_PATCH@;
+  static constexpr int kVersionBuild = @VERSION_BUILD@;
 
   static std::string VersionString();
   static std::string ProductNameString();
@@ -60,12 +60,12 @@ inline std::string BrokerVersion::ProductNameString()
 
 inline std::string BrokerVersion::BuildDateString()
 {
-  return "@BROKER_VERSION_DATESTR@";
+  return "@DATESTR@";
 }
 
 inline std::string BrokerVersion::CopyrightString()
 {
-  return "@BROKER_VERSION_COPYRIGHT@";
+  return "@COPYRIGHT@";
 }
 
 #endif  // BROKER_VERSION_H_

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,18 +29,18 @@ public:
   ~WindowsBrokerOsInterface();
 
   // BrokerOsInterface
-  std::string GetLogFilePath() const override;
-  bool OpenLogFile() override;
-  std::pair<std::string, std::ifstream> GetConfFile(rdmnet::BrokerLog& log) override;
+  std::string                           GetLogFilePath() const override;
+  bool                                  OpenLogFile() override;
+  std::pair<std::string, std::ifstream> GetConfFile(etcpal::Logger& log) override;
 
-  // rdmnet::BrokerLogInterface
-  void GetLogTime(EtcPalLogTimeParams& time) override;
-  void OutputLogMsg(const std::string& msg) override;
+  // etcpal::LogMessageHandler
+  etcpal::LogTimestamp GetLogTimestamp() override;
+  void                 HandleLogMessage(const EtcPalLogStrings& strings) override;
 
 private:
   std::wstring program_data_path_;
   std::wstring log_file_path_;
-  FILE* log_file_{nullptr};
+  FILE*        log_file_{nullptr};
 
   DWORD RotateLogs();
 };

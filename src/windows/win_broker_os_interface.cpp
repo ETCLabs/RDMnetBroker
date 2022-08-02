@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2019 ETC Inc.
+ * Copyright 2022 ETC Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@
 #include "service_utils.h"
 #include "broker_version.h"
 
-constexpr const WCHAR kRelativeConfFileName[] = L"\\ETC\\RDMnetBroker\\broker.conf";
+constexpr const WCHAR                  kRelativeConfFileName[] = L"\\ETC\\RDMnetBroker\\broker.conf";
 static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetBroker"};
-static const std::wstring kLogFileName = L"broker.log";
-static constexpr int kMaxLogRotationFiles = 5;
+static const std::wstring              kLogFileName = L"broker.log";
+static constexpr int                   kMaxLogRotationFiles = 5;
 
 std::string ConvertWstringToUtf8(const std::wstring& str)
 {
@@ -40,7 +40,7 @@ std::string ConvertWstringToUtf8(const std::wstring& str)
   if (size_needed > 0)
   {
     auto buf = std::make_unique<char[]>(size_needed);
-    int convert_res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, buf.get(), size_needed, NULL, NULL);
+    int  convert_res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, buf.get(), size_needed, NULL, NULL);
     if (convert_res > 0)
     {
       return buf.get();
@@ -51,7 +51,7 @@ std::string ConvertWstringToUtf8(const std::wstring& str)
 
 WindowsBrokerOsInterface::WindowsBrokerOsInterface()
 {
-  PWSTR program_data_path;
+  PWSTR   program_data_path;
   HRESULT get_known_folder_res = SHGetKnownFolderPath(FOLDERID_ProgramData, 0, NULL, &program_data_path);
   if (get_known_folder_res == S_OK)
   {
@@ -119,12 +119,12 @@ bool WindowsBrokerOsInterface::OpenLogFile()
   }
 
   // Write an initial message to the log file
-  EtcPalLogTimeParams time;
-  GetLogTime(time);
+  auto time = GetLogTimestamp();
   char initial_msg[512];
-  _snprintf_s<512>(
-      initial_msg, _TRUNCATE, "Starting RDMnet Broker Service version %s on %04d-%02d-%02d at %02d:%02d:%02d...\n",
-      BrokerVersion::VersionString().c_str(), time.year, time.month, time.day, time.hour, time.minute, time.second);
+  _snprintf_s<512>(initial_msg, _TRUNCATE,
+                   "Starting RDMnet Broker Service version %s on %04d-%02d-%02d at %02d:%02d:%02d...\n",
+                   BrokerVersion::VersionString().c_str(), time.get().year, time.get().month, time.get().day,
+                   time.get().hour, time.get().minute, time.get().second);
   fwrite(initial_msg, sizeof(char), strnlen_s(initial_msg, 100), log_file_);
 
   // Write an error message to the log file if it is open and there was an error rotating the logs
@@ -140,7 +140,7 @@ bool WindowsBrokerOsInterface::OpenLogFile()
   return true;
 }
 
-std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(rdmnet::BrokerLog& log)
+std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(etcpal::Logger& log)
 {
   if (program_data_path_.empty())
   {
@@ -148,15 +148,15 @@ std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(rdmn
     return std::make_pair(std::string{}, std::ifstream{});
   }
 
-  std::wstring conf_file_path = program_data_path_ + kRelativeConfFileName;
+  std::wstring  conf_file_path = program_data_path_ + kRelativeConfFileName;
   std::ifstream conf_file(conf_file_path);
 
   return std::make_pair(ConvertWstringToUtf8(conf_file_path), std::move(conf_file));
 }
 
-void WindowsBrokerOsInterface::GetLogTime(EtcPalLogTimeParams& time)
+etcpal::LogTimestamp WindowsBrokerOsInterface::GetLogTimestamp()
 {
-  int utc_offset = 0;
+  int                   utc_offset = 0;
   TIME_ZONE_INFORMATION tzinfo;
   switch (GetTimeZoneInformation(&tzinfo))
   {
@@ -173,20 +173,16 @@ void WindowsBrokerOsInterface::GetLogTime(EtcPalLogTimeParams& time)
 
   SYSTEMTIME win_time;
   GetLocalTime(&win_time);
-  time.year = win_time.wYear;
-  time.month = win_time.wMonth;
-  time.day = win_time.wDay;
-  time.hour = win_time.wHour;
-  time.minute = win_time.wMinute;
-  time.second = win_time.wSecond;
-  time.msec = win_time.wMilliseconds;
-  time.utc_offset = utc_offset;
+
+  return etcpal::LogTimestamp(win_time.wYear, win_time.wMonth, win_time.wDay, win_time.wHour, win_time.wMinute,
+                              win_time.wSecond, win_time.wMilliseconds, utc_offset);
 }
 
-void WindowsBrokerOsInterface::OutputLogMsg(const std::string& str)
+void WindowsBrokerOsInterface::HandleLogMessage(const EtcPalLogStrings& strings)
 {
   if (log_file_)
   {
+    std::string str(strings.human_readable);
     fwrite(str.c_str(), sizeof(char), str.length(), log_file_);
     fwrite("\n", sizeof(char), 1, log_file_);
     fflush(log_file_);
@@ -200,7 +196,7 @@ DWORD WindowsBrokerOsInterface::RotateLogs()
   if (file_attr == INVALID_FILE_ATTRIBUTES)
     return 0;
 
-  int rotate_number = 1;
+  int  rotate_number = 1;
   auto LogBackupFileName = [&](int rotate_number) { return log_file_path_ + L"." + std::to_wstring(rotate_number); };
 
   // Determine the highest log backup file that already exists on the system
