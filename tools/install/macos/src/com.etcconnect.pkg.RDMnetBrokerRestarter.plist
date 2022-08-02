@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.etcconnect.pkg.RDMnetBrokerRestarter</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/libexec/RDMnetBrokerRestarter.sh</string>
+    </array>
+
+    <key>LaunchEvents</key>
+    <dict>
+        <key>com.apple.notifyd.matching</key>
+        <dict>
+            <key>com.apple.system.config.network_change</key>
+            <dict>
+                <key>Notification</key>
+                <string>com.apple.system.config.network_change</string>
+            </dict>
+        </dict>
+    </dict>
+
+    <key>WatchPaths</key>
+    <array>
+        <string>/usr/local/etc/RDMnetBroker/broker.conf</string>
+    </array>
+</dict>
+</plist>

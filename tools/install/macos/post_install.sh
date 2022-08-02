@@ -10,3 +10,4 @@ if test -f "$CONFIG_BACKUP"; then
 fi
 
 /bin/launchctl load "/Library/LaunchDaemons/com.etcconnect.pkg.RDMnetBroker.plist"
+/bin/launchctl load "/Library/LaunchDaemons/com.etcconnect.pkg.RDMnetBrokerRestarter.plist"
