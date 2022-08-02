@@ -26,6 +26,9 @@
 #include "rdmnet/cpp/common.h"
 #include "broker_version.h"
 
+// The interval to wait before restarting (in case we get blasted with tons of notifications at once)
+static constexpr uint32_t kRestartTimerIntervalMs = 2000u;
+
 bool BrokerShell::Run(bool /*debug_mode*/)
 {
   if (!OpenLogFile())
@@ -61,9 +64,9 @@ bool BrokerShell::Run(bool /*debug_mode*/)
     {
       break;
     }
-    else if (restart_requested_)
+    else if (TimeToRestartBroker())
     {
-      restart_requested_ = false;
+      log_.Info("Restart requested, restarting broker and applying changes");
 
       auto broker_settings = broker_.settings();
       broker_.Shutdown();
@@ -81,10 +84,10 @@ bool BrokerShell::Run(bool /*debug_mode*/)
   return true;
 }
 
-void BrokerShell::NetworkChanged()
+void BrokerShell::RequestRestart()
 {
-  log_.Info("Network change detected, restarting broker and applying changes");
-  restart_requested_ = true;
+  etcpal::MutexGuard guard(lock_);
+  LockedRequestRestart();
 }
 
 void BrokerShell::AsyncShutdown()
@@ -144,16 +147,38 @@ bool BrokerShell::LoadBrokerConfig()
 
 void BrokerShell::HandleScopeChanged(const std::string& new_scope)
 {
-  log_.Info("Scope change detected, restarting broker and applying changes");
+  etcpal::MutexGuard guard(lock_);
   new_scope_ = new_scope;
-  restart_requested_ = true;
+  LockedRequestRestart();
 }
 
 void BrokerShell::ApplySettingsChanges(rdmnet::Broker::Settings& settings)
 {
+  etcpal::MutexGuard guard(lock_);
+
   if (!new_scope_.empty())
   {
     settings.scope = new_scope_;
     new_scope_.clear();
   }
+}
+
+bool BrokerShell::TimeToRestartBroker()
+{
+  etcpal::MutexGuard guard(lock_);
+
+  // The timer is used to prevent "restart spamming" if tons of restarts are requested at once.
+  if (restart_requested_ && restart_timer_.IsExpired())
+  {
+    restart_requested_ = false;
+    return true;
+  }
+
+  return false;
+}
+
+void BrokerShell::LockedRequestRestart()
+{
+  restart_requested_ = true;
+  restart_timer_.Start(kRestartTimerIntervalMs);
 }

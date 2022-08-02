@@ -32,6 +32,8 @@ public:
 
   void PrintVersion() { broker_shell_.PrintVersion(); }
 
+  void RequestRestart() { broker_shell_.RequestRestart(); }
+
 private:
   MacBrokerOsInterface os_interface_;
   BrokerShell          broker_shell_{os_interface_};

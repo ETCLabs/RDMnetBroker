@@ -19,15 +19,35 @@
 
 #include "broker_service.h"
 
+#include <CoreFoundation/CoreFoundation.h>
+#include <notify_keys.h>
+
+static void InterfaceChangeCallback(CFNotificationCenterRef center,
+                                    void*                   observer,
+                                    CFStringRef             name,
+                                    const void*             object,
+                                    CFDictionaryRef         userInfo)
+{
+  BrokerService* service = reinterpret_cast<BrokerService*>(observer);
+  if (service)
+    service->RequestRestart();
+}
+
 bool BrokerService::Init()
 {
-  shell_thread_.Start([this]() {
-    broker_shell_.Run();
-    });
+  // Set up network change detection
+  CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), this, InterfaceChangeCallback,
+                                  CFSTR(kNotifySCNetworkChange), nullptr,
+                                  CFNotificationSuspensionBehaviorDeliverImmediately);
+
+  shell_thread_.Start([this]() { broker_shell_.Run(); });
 }
 
 void BrokerService::Deinit()
 {
   broker_shell_.AsyncShutdown();
   shell_thread_.Join();
+
+  CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), this, CFSTR(kNotifySCNetworkChange),
+                                     nullptr);
 }

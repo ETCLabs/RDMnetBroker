@@ -35,7 +35,7 @@ VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID              
 
   if (service_)
   {
-    service_->broker_shell_.NetworkChanged();
+    service_->broker_shell_.RequestRestart();
   }
 }
 

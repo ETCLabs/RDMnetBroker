@@ -10,18 +10,6 @@
         <string>/usr/local/libexec/RDMnetBrokerRestarter.sh</string>
     </array>
 
-    <key>LaunchEvents</key>
-    <dict>
-        <key>com.apple.notifyd.matching</key>
-        <dict>
-            <key>com.apple.system.config.network_change</key>
-            <dict>
-                <key>Notification</key>
-                <string>com.apple.system.config.network_change</string>
-            </dict>
-        </dict>
-    </dict>
-
     <key>WatchPaths</key>
     <array>
         <string>/usr/local/etc/RDMnetBroker/broker.conf</string>
