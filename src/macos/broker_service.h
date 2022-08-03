@@ -27,8 +27,8 @@
 class BrokerService
 {
 public:
-  bool Init();
-  void Deinit();
+  bool Run();
+  void AsyncShutdown();
 
   void PrintVersion() { broker_shell_.PrintVersion(); }
 

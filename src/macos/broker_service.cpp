@@ -33,21 +33,27 @@ static void InterfaceChangeCallback(CFNotificationCenterRef center,
     service->RequestRestart();
 }
 
-bool BrokerService::Init()
+bool BrokerService::Run()
 {
-  // Set up network change detection
-  CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), this, InterfaceChangeCallback,
-                                  CFSTR(kNotifySCNetworkChange), nullptr,
-                                  CFNotificationSuspensionBehaviorDeliverImmediately);
-
-  shell_thread_.Start([this]() { broker_shell_.Run(); });
+  if(shell_thread_.Start([this]() { broker_shell_.Run(); }).IsOk())
+  {
+    // Set up network change detection
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), this, InterfaceChangeCallback,
+                                    CFSTR(kNotifySCNetworkChange), nullptr,
+                                    CFNotificationSuspensionBehaviorDeliverImmediately);
+    CFRunLoopRun();
+    return true;
+  }
+    
+  return false;
 }
 
-void BrokerService::Deinit()
+void BrokerService::AsyncShutdown()
 {
-  broker_shell_.AsyncShutdown();
-  shell_thread_.Join();
-
   CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), this, CFSTR(kNotifySCNetworkChange),
                                      nullptr);
+  CFRunLoopStop(CFRunLoopGetMain());
+
+  broker_shell_.AsyncShutdown();
+  shell_thread_.Join();
 }

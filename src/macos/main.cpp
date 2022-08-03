@@ -22,23 +22,23 @@
 #include <signal.h>
 #include "broker_service.h"
 
+#include <iostream>
+
+static BrokerService service;
+
+void HandleSignal(int signum)
+{
+  if (signum == SIGTERM)
+    service.AsyncShutdown();
+}
+
 int main()
 {
   // As a launchd daemon, we must set up a SIGTERM handler
-  sigset_t term_signal;
-  sigemptyset(&term_signal);
-  sigaddset(&term_signal, SIGTERM);
-  sigprocmask(SIG_BLOCK, &term_signal, nullptr);
+  signal(SIGTERM, HandleSignal);
 
-  BrokerService service;
-  if (!service.Init())
+  if (!service.Run())
     return 1;
 
-  // Now wait for SIGTERM, then shut down
-  int l_signal;
-  sigwait(&term_signal, &l_signal);
-
-  service.Deinit();
-
-  return 0;
+  return 0;  // Getting here means the main loop terminated, likely due to SIGTERM.
 }
