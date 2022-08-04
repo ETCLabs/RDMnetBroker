@@ -32,7 +32,7 @@ public:
 
   void PrintVersion() { broker_shell_.PrintVersion(); }
 
-  void RequestRestart() { broker_shell_.RequestRestart(); }
+  void RequestRestart(uint32_t cooldown_ms = 0u) { broker_shell_.RequestRestart(cooldown_ms); }
 
 private:
   MacBrokerOsInterface os_interface_;
