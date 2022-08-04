@@ -27,7 +27,7 @@
 #include "broker_version.h"
 
 // The interval to wait before restarting (in case we get blasted with tons of notifications at once)
-static constexpr uint32_t kRestartTimerIntervalMs = 2000u;
+static constexpr uint32_t kRestartTimerIntervalMs = 5000u;
 
 bool BrokerShell::Run(bool /*debug_mode*/)
 {
