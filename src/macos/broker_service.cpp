@@ -44,7 +44,7 @@ bool BrokerService::Run()
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), this, InterfaceChangeCallback,
                                     CFSTR(kNotifySCNetworkChange), nullptr,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
-    CFRunLoopRun();
+    CFRunLoopRun();  // This loop handles the change detection and must be run on the main() thread.
     return true;
   }
 
