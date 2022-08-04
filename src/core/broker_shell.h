@@ -41,7 +41,7 @@ public:
   BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface) {}
   bool Run(bool debug_mode = false);
 
-  void RequestRestart();
+  void RequestRestart(uint32_t cooldown_ms = 0u);
   void AsyncShutdown();
 
   void PrintVersion();
@@ -70,7 +70,7 @@ private:
 
   bool TimeToRestartBroker();
 
-  void LockedRequestRestart();
+  void LockedRequestRestart(uint32_t cooldown_ms = 0u);
 };
 
 #endif  // BROKER_SHELL_H_

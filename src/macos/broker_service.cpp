@@ -22,6 +22,9 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <notify_keys.h>
 
+// The interval to wait before restarting (in case we get blasted with tons of notifications at once)
+static constexpr uint32_t kNetworkChangeCooldownMs = 5000u;
+
 static void InterfaceChangeCallback(CFNotificationCenterRef center,
                                     void*                   observer,
                                     CFStringRef             name,
@@ -30,12 +33,12 @@ static void InterfaceChangeCallback(CFNotificationCenterRef center,
 {
   BrokerService* service = reinterpret_cast<BrokerService*>(observer);
   if (service)
-    service->RequestRestart();
+    service->RequestRestart(kNetworkChangeCooldownMs);
 }
 
 bool BrokerService::Run()
 {
-  if(shell_thread_.Start([this]() { broker_shell_.Run(); }).IsOk())
+  if (shell_thread_.Start([this]() { broker_shell_.Run(); }).IsOk())
   {
     // Set up network change detection
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), this, InterfaceChangeCallback,
@@ -44,7 +47,7 @@ bool BrokerService::Run()
     CFRunLoopRun();
     return true;
   }
-    
+
   return false;
 }
 

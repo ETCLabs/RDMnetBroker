@@ -26,9 +26,6 @@
 #include "rdmnet/cpp/common.h"
 #include "broker_version.h"
 
-// The interval to wait before restarting (in case we get blasted with tons of notifications at once)
-static constexpr uint32_t kRestartTimerIntervalMs = 5000u;
-
 bool BrokerShell::Run(bool /*debug_mode*/)
 {
   if (!OpenLogFile())
@@ -84,10 +81,10 @@ bool BrokerShell::Run(bool /*debug_mode*/)
   return true;
 }
 
-void BrokerShell::RequestRestart()
+void BrokerShell::RequestRestart(uint32_t cooldown_ms)
 {
   etcpal::MutexGuard guard(lock_);
-  LockedRequestRestart();
+  LockedRequestRestart(cooldown_ms);
 }
 
 void BrokerShell::AsyncShutdown()
@@ -177,8 +174,10 @@ bool BrokerShell::TimeToRestartBroker()
   return false;
 }
 
-void BrokerShell::LockedRequestRestart()
+void BrokerShell::LockedRequestRestart(uint32_t cooldown_ms)
 {
   restart_requested_ = true;
-  restart_timer_.Start(kRestartTimerIntervalMs);
+
+  if (cooldown_ms > restart_timer_.GetRemaining())  // Don't cancel out previous cooldown
+    restart_timer_.Start(cooldown_ms);
 }
