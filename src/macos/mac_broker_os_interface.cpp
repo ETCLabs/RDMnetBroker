@@ -43,7 +43,7 @@ static constexpr char* kConfigFilePath = "/usr/local/etc/RDMnetBroker/broker.con
 
 static constexpr int kMaxLogRotationFiles = 5;
 
-bool SetUpLogFile()
+bool CreateInitialLogFileIfNeeded()
 {
   // The installer has already set up the log directory. We only need to create the file here.
   bool success = false;
@@ -91,7 +91,7 @@ bool RotateLogs()
   };
 
   // Determine the highest log backup file that already exists on the system
-  int rotate_number = 1;
+  int rotate_number = 0;
   for (; rotate_number < kMaxLogRotationFiles; ++rotate_number)
   {
     auto backup_path = LogBackupFilePath(rotate_number);
@@ -123,10 +123,12 @@ std::string MacBrokerOsInterface::GetLogFilePath() const
 
 bool MacBrokerOsInterface::OpenLogFile()
 {
-  if (!SetUpLogFile())
-    return false;
-
+  // Rotate first. This does nothing if the directory is empty.
   bool rotate_error = !RotateLogs();
+
+  // Now create the initial log if the directory is empty.
+  if (!CreateInitialLogFileIfNeeded())
+    return false;
 
   log_stream_.open(GetLogFilePath());
 
