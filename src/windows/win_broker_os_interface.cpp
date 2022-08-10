@@ -75,7 +75,7 @@ WindowsBrokerOsInterface::WindowsBrokerOsInterface()
         if (error != ERROR_ALREADY_EXISTS)
         {
           // Something went wrong creating an intermediate directory.
-          std::wcout << L"Couldn't create directory " << log_file_path_ << L": Error " << error << L".\n";
+          std::wcout << L"Couldn't create directory " << log_file_path_ << L": Error " << error << ".\n";
         }
       }
     }
