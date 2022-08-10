@@ -28,9 +28,9 @@
 #include "service_utils.h"
 #include "broker_version.h"
 
-constexpr const WCHAR                  kRelativeConfDirName[] = L"\\ETC\\RDMnetBroker";
+constexpr const WCHAR                  kRelativeConfDirName[] = L"\\ETC\\RDMnetBroker\\Config";
 constexpr const WCHAR                  kConfFileName[] = L"broker.conf";
-static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetBroker"};
+static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetBroker", L"Logs"};
 static const std::wstring              kLogFileName = L"broker.log";
 static constexpr int                   kMaxLogRotationFiles = 5;
 
