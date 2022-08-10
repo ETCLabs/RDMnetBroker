@@ -58,14 +58,9 @@ WindowsBrokerOsInterface::WindowsBrokerOsInterface()
   {
     program_data_path_ = program_data_path;
     CoTaskMemFree(program_data_path);
-  }
 
-  PWSTR app_data_path;
-  get_known_folder_res = SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &app_data_path);
-  if (get_known_folder_res == S_OK)
-  {
     // Build the log file path on top of it
-    log_file_path_ = app_data_path;
+    log_file_path_ = program_data_path_;
     for (const auto& intermediate_dir : kRelativeLogFilePath)
     {
       log_file_path_ += L"\\" + intermediate_dir;
