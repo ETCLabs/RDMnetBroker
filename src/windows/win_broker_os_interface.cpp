@@ -69,15 +69,6 @@ WindowsBrokerOsInterface::WindowsBrokerOsInterface()
     for (const auto& intermediate_dir : kRelativeLogFilePath)
     {
       log_file_path_ += L"\\" + intermediate_dir;
-      if (!CreateDirectory(log_file_path_.c_str(), NULL))
-      {
-        DWORD error = GetLastError();
-        if (error != ERROR_ALREADY_EXISTS)
-        {
-          // Something went wrong creating an intermediate directory.
-          std::wcout << L"Couldn't create directory " << log_file_path_ << L": Error " << error << ".\n";
-        }
-      }
     }
     log_file_path_ += L"\\" + kLogFileName;
   }
