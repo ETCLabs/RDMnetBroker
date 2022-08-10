@@ -20,6 +20,7 @@
 #include "broker_service.h"
 #include <cassert>
 #include <strsafe.h>
+#include <system_error>
 
 BrokerService* BrokerService::service_{nullptr};
 
@@ -39,6 +40,50 @@ VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID              
   }
 }
 
+HANDLE BrokerService::InitConfigChangeDetectionHandle()
+{
+  std::wstring prefix(L"\\\\?\\");  // FindFirstChangeNotification requires this for wide paths
+  std::wstring path = prefix + service_->os_interface_.GetConfigPath();
+  return FindFirstChangeNotification(path.c_str(), false, FILE_NOTIFY_CHANGE_LAST_WRITE);
+}
+
+bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
+{
+  static constexpr DWORD kWaitMs = 200u;  // Keep this short for quick shutdown
+  if ((change_handle == INVALID_HANDLE_VALUE) || (change_handle == nullptr))
+  {
+    service_->broker_shell_.log().Warning("WARNING: Failed to initialize broker config change notification (%s).",
+                                          std::system_category().message(GetLastError()));
+    return false;
+  }
+  else
+  {
+    DWORD status = WaitForSingleObject(change_handle, kWaitMs);
+    switch (status)
+    {
+      case WAIT_OBJECT_0:  // The config has changed
+        service_->broker_shell_.RequestRestart();
+        if (!FindNextChangeNotification(change_handle))
+        {
+          service_->broker_shell_.log().Warning(
+              "WARNING: Failed to set up the next broker config change notification (%s).",
+              std::system_category().message(GetLastError()));
+          return false;
+        }
+        break;
+      case WAIT_TIMEOUT:  // The config didn't change, do nothing
+        break;
+      default:  // WaitForSingleObject error
+        service_->broker_shell_.log().Warning(
+            "WARNING: Failed to wait for the next broker config change notification (%s).",
+            std::system_category().message(GetLastError()));
+        return false;
+    }
+  }
+
+  return true;
+}
+
 DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 {
   DWORD result = 1;
@@ -48,8 +93,20 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
     HANDLE change_notif_handle = nullptr;
     NotifyIpInterfaceChange(AF_UNSPEC, InterfaceChangeCallback, nullptr, FALSE, &change_notif_handle);
 
+    // Also set up config change detection
+    std::atomic_bool stop_config_change_detection(false);
+    etcpal::Thread   config_change_detection_thread([&stop_config_change_detection]() {
+      HANDLE change_handle = InitConfigChangeDetectionHandle();
+      while (!stop_config_change_detection.load(std::memory_order_relaxed) && ProcessConfigChanges(change_handle))
+        ;
+    });
+
     if (service_->broker_shell_.Run())
       result = 0;
+
+    // Stop config change detection
+    stop_config_change_detection.store(true, std::memory_order_relaxed);
+    config_change_detection_thread.Join();
 
     // Cancel network change detection
     CancelMibChangeNotify2(change_notif_handle);

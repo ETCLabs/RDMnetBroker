@@ -38,7 +38,9 @@
 class BrokerShell : public rdmnet::Broker::NotifyHandler
 {
 public:
-  BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface) {}
+  BrokerShell(BrokerOsInterface& os_interface);
+  ~BrokerShell();
+
   bool Run(bool debug_mode = false);
 
   void RequestRestart(uint32_t cooldown_ms = 0u);
@@ -46,12 +48,16 @@ public:
 
   void PrintVersion();
 
+  etcpal::Logger& log() { return log_; }
+
 private:
   BrokerOsInterface& os_interface_;
   rdmnet::Broker     broker_;
   etcpal::Logger     log_;
 
   BrokerConfig broker_config_;
+
+  bool ready_to_run_{false};
 
   // Handle changes at runtime
   mutable etcpal::Mutex lock_;  // These are guarded by this lock
@@ -66,7 +72,7 @@ private:
   void HandleScopeChanged(const std::string& new_scope) override;
   void PrintWarningMessage();
 
-  void ApplySettingsChanges(rdmnet::Broker::Settings& settings);
+  void ApplySettingsChanges();
 
   bool TimeToRestartBroker();
 

@@ -26,32 +26,40 @@
 #include "rdmnet/cpp/common.h"
 #include "broker_version.h"
 
+BrokerShell::BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface)
+{
+  if (OpenLogFile())
+  {
+    if (log_.Startup(os_interface_))
+    {
+      if (LoadBrokerConfig())
+      {
+        log_.SetLogMask(broker_config_.log_mask);
+        ready_to_run_ = true;
+        return;
+      }
+      log_.Shutdown();
+    }
+  }
+}
+
+BrokerShell::~BrokerShell()
+{
+  if (ready_to_run_)
+    log_.Shutdown();
+}
+
 bool BrokerShell::Run(bool /*debug_mode*/)
 {
-  if (!OpenLogFile())
+  if (!ready_to_run_)
     return false;
-
-  if (!log_.Startup(os_interface_))
-    return false;
-
-  if (!LoadBrokerConfig())
-  {
-    log_.Shutdown();
-    return false;
-  }
-
-  log_.SetLogMask(broker_config_.log_mask);
 
   if (!rdmnet::Init(log_))
-  {
-    log_.Shutdown();
     return false;
-  }
 
   if (!broker_.Startup(broker_config_.settings, &log_, this))
   {
     rdmnet::Deinit();
-    log_.Shutdown();
     return false;
   }
 
@@ -65,11 +73,13 @@ bool BrokerShell::Run(bool /*debug_mode*/)
     {
       log_.Info("Restart requested, restarting broker and applying changes");
 
-      auto broker_settings = broker_.settings();
       broker_.Shutdown();
 
-      ApplySettingsChanges(broker_settings);
-      broker_.Startup(broker_settings, &log_, this);
+      if (!LoadBrokerConfig())
+        break;  // LoadBrokerConfig already logged critical error
+
+      ApplySettingsChanges();
+      broker_.Startup(broker_config_.settings, &log_, this);
     }
 
     etcpal_thread_sleep(300);
@@ -77,7 +87,6 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
   broker_.Shutdown();
   rdmnet::Deinit();
-  log_.Shutdown();
   return true;
 }
 
@@ -149,13 +158,15 @@ void BrokerShell::HandleScopeChanged(const std::string& new_scope)
   LockedRequestRestart();
 }
 
-void BrokerShell::ApplySettingsChanges(rdmnet::Broker::Settings& settings)
+void BrokerShell::ApplySettingsChanges()
 {
   etcpal::MutexGuard guard(lock_);
 
+  log_.SetLogMask(broker_config_.log_mask);
+
   if (!new_scope_.empty())
   {
-    settings.scope = new_scope_;
+    broker_config_.settings.scope = new_scope_;
     new_scope_.clear();
   }
 }
