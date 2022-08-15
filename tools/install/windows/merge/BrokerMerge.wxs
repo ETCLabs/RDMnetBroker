@@ -47,7 +47,7 @@
           <Directory Id="PROGRAM_DATA_RDMNET_BROKER_DIR" Name="RDMnetBroker" FileSource="src">
             <Component Id="BrokerConf" Guid="C24F6AF3-1DCD-4160-A604-200E78401721" SharedDllRefCount="yes">
               <CreateFolder>
-                <util:PermissionEx User="Everyone" GenericAll="yes" />
+                <util:PermissionEx User="Users" GenericAll="yes" />
               </CreateFolder>
               <File Id="BrokerConfFile" Name="broker.conf" DiskId="1" KeyPath="yes" />
             </Component>
