@@ -44,12 +44,10 @@
       <!-- The ProgramData directories for the conf and log files -->
       <Directory Id="CommonAppDataFolder">
         <Directory Id="PROGRAM_DATA_ETC_DIR" Name="ETC">
-          <Directory Id="PROGRAM_DATA_RDMNET_BROKER_DIR" Name="RDMnetBroker">
-            <Directory Id="PROGRAM_DATA_RDMNET_BROKER_CONFIG_DIR" Name="Config" FileSource="src">
-              <Component Id="BrokerConf" Guid="C24F6AF3-1DCD-4160-A604-200E78401721" SharedDllRefCount="yes">
-                <File Id="BrokerConfFile" Name="broker.conf" DiskId="1" KeyPath="yes" />
-              </Component>
-            </Directory>
+          <Directory Id="PROGRAM_DATA_RDMNET_BROKER_DIR" Name="RDMnetBroker" FileSource="src">
+            <Component Id="BrokerConf" Guid="C24F6AF3-1DCD-4160-A604-200E78401721" SharedDllRefCount="yes">
+              <File Id="BrokerConfFile" Name="broker.conf" DiskId="1" KeyPath="yes" />
+            </Component>
             <Directory Id="PROGRAM_DATA_RDMNET_BROKER_LOGS_DIR" Name="Logs">
             </Directory>
           </Directory>
