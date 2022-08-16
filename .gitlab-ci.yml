@@ -81,7 +81,7 @@ github-deploy:
 artifactory-deploy:
   stage: deploy
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $NEW_BUILD_VERSION =~ /^\d+\.\d+\.\d+\.\d+$/'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $NEW_BUILD_VERSION =~ /^\d+\.\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_NAME == "main"'
   tags:
     - etc-linux-docker
   image: etc-docker.artifactory.etcconnect.com/python:latest
