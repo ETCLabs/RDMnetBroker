@@ -1,11 +1,12 @@
 """Deploys binaries to a GitHub release given the specified tag name."""
 import argparse
 import os
+import sys
 import time
 import requests
 
 THIS_FILE_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
-ARTIFACTORY_API_KEY = os.getenv('ETC_CLOUD_ARTIFACTORY_API_KEY')
+ARTIFACTORY_API_KEY = os.getenv('RDMNETBRKR_ARTIFACTORY_API_KEY')
 ARTIFACTORY_PROJECT_NAME = 'RDMnetBroker'
 ARTIFACTORY_URL = f'https://artifactory.etcconnect.com:443/artifactory/NET/dev/{ARTIFACTORY_PROJECT_NAME}'
 
@@ -29,6 +30,7 @@ def upload_file(local_name: str, version: str):
         print("Successfully uploaded {local_name}.")
     else:
         print(f"Failed to upload {local_name}, received status code {response.status_code}")
+        sys.exit(1)
 
 
 def deploy_binaries(version: str):
