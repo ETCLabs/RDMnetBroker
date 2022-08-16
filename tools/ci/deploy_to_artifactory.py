@@ -27,7 +27,7 @@ def upload_file(local_name: str, version: str):
 
     response = requests.put(f'{ARTIFACTORY_URL}/{major_minor_patch}/{remote_name};project={ARTIFACTORY_PROJECT_NAME};version={version}', headers=headers, data=data)
     if (response.status_code == 201):
-        print("Successfully uploaded {local_name}.")
+        print(f"Successfully uploaded {local_name}.")
     else:
         print(f"Failed to upload {local_name}, received status code {response.status_code}")
         sys.exit(1)
