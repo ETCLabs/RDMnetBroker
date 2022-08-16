@@ -46,6 +46,7 @@ public:
 
   rdmnet::Broker::Settings settings;
   int                      log_mask{ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO)};
+  bool                     enable_broker{true};
 
   [[nodiscard]] ParseResult Read(std::istream& stream, etcpal::Logger* log = nullptr);
   void                      SetDefaults();

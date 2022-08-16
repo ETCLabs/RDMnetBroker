@@ -432,6 +432,15 @@ static const Validator kSettingsValidatorArray[] = {
       return ValidateAndStoreInt<unsigned int>("/max_reject_connections", val, config.settings.limits.reject_connections, log);
     },
     std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
+  },
+  {
+    "/enable_broker"_json_pointer,
+    json::value_t::boolean,
+    [](const json& val, auto& config, auto log) {
+      config.enable_broker = val;
+      return true;
+    },
+    std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
   }
 };
 // clang-format on

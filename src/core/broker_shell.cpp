@@ -57,14 +57,23 @@ bool BrokerShell::Run(bool /*debug_mode*/)
   if (!rdmnet::Init(log_))
     return false;
 
-  if (!broker_.Startup(broker_config_.settings, &log_, this))
-  {
-    rdmnet::Deinit();
-    return false;
-  }
-
+  bool startup_broker = true;
   while (true)
   {
+    if (startup_broker)
+    {
+      startup_broker = false;
+
+      if (broker_config_.enable_broker)
+      {
+        if (!broker_.Startup(broker_config_.settings, &log_, this))
+        {
+          rdmnet::Deinit();
+          return false;
+        }
+      }
+    }
+
     if (shutdown_requested_)
     {
       break;
@@ -73,19 +82,23 @@ bool BrokerShell::Run(bool /*debug_mode*/)
     {
       log_.Info("Restart requested, restarting broker and applying changes");
 
-      broker_.Shutdown();
+      if (broker_config_.enable_broker)
+        broker_.Shutdown();
 
       if (!LoadBrokerConfig())
         break;  // LoadBrokerConfig already logged critical error
 
       ApplySettingsChanges();
-      broker_.Startup(broker_config_.settings, &log_, this);
+
+      startup_broker = true;
     }
 
     etcpal_thread_sleep(300);
   }
 
-  broker_.Shutdown();
+  if (broker_config_.enable_broker)
+    broker_.Shutdown();
+
   rdmnet::Deinit();
   return true;
 }
