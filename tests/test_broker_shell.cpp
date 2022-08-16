@@ -59,11 +59,3 @@ TEST_F(TestBrokerShell, DoesNotStartIfOpenLogFileFails)
   BrokerShell shell{os_interface_};
   EXPECT_FALSE(shell.Run());
 }
-
-TEST_F(TestBrokerShell, DoesNotStartIfGetConfFileFails)
-{
-  EXPECT_CALL(os_interface_, GetConfFile(_)).WillOnce(Return(ByMove(std::make_pair("fake_path", std::ifstream{}))));
-
-  BrokerShell shell{os_interface_};
-  EXPECT_FALSE(shell.Run());
-}
