@@ -22,6 +22,9 @@
 #include <strsafe.h>
 #include <system_error>
 
+// The interval to wait before restarting (in case we get blasted with tons of notifications at once)
+static constexpr uint32_t kNetworkChangeCooldownMs = 5000u;
+
 BrokerService* BrokerService::service_{nullptr};
 
 // The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
@@ -36,7 +39,7 @@ VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID              
 
   if (service_)
   {
-    service_->broker_shell_.RequestRestart();
+    service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
   }
 }
 
