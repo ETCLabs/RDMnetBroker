@@ -453,10 +453,10 @@ BrokerConfig::ParseResult BrokerConfig::Read(std::istream& stream, etcpal::Logge
     stream >> current_;
     return ValidateCurrent(log);
   }
-  catch (json::parse_error)
+  catch (json::parse_error& e)
   {
     if (log)
-      log->Critical("Could not parse configuration file: Invalid JSON.");
+      log->Notice("Could not parse configuration file: %s", e.what());
     return ParseResult::kJsonParseErr;
   }
 }

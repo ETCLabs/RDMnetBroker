@@ -67,7 +67,7 @@ private:
   std::string           new_scope_;
 
   bool OpenLogFile();
-  bool LoadBrokerConfig();
+  void LoadBrokerConfig();
 
   void HandleScopeChanged(const std::string& new_scope) override;
   void PrintWarningMessage();

@@ -32,13 +32,9 @@ BrokerShell::BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_int
   {
     if (log_.Startup(os_interface_))
     {
-      if (LoadBrokerConfig())
-      {
-        log_.SetLogMask(broker_config_.log_mask);
-        ready_to_run_ = true;
-        return;
-      }
-      log_.Shutdown();
+      LoadBrokerConfig();
+      log_.SetLogMask(broker_config_.log_mask);
+      ready_to_run_ = true;
     }
   }
 }
@@ -66,15 +62,16 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
       if (broker_config_.enable_broker)
       {
-        if (!broker_.Startup(broker_config_.settings, &log_, this))
+        auto res = broker_.Startup(broker_config_.settings, &log_, this);
+        if (!res)
         {
-          rdmnet::Deinit();
-          return false;
+          log_.Notice("Broker startup failed (%s), running with broker functionality disabled.", res.ToCString());
+          broker_config_.enable_broker = false;
         }
       }
       else
       {
-        log_.Info("Running with broker functionality disabled...");
+        log_.Info("Running with broker functionality disabled.");
       }
     }
 
@@ -84,14 +81,12 @@ bool BrokerShell::Run(bool /*debug_mode*/)
     }
     else if (TimeToRestartBroker())
     {
-      log_.Info("Restart requested, restarting broker and applying changes");
+      log_.Info("Restart requested, restarting broker and applying changes...");
 
       if (broker_config_.enable_broker)
         broker_.Shutdown();
 
-      if (!LoadBrokerConfig())
-        break;  // LoadBrokerConfig already logged critical error
-
+      LoadBrokerConfig();
       ApplySettingsChanges();
 
       startup_broker = true;
@@ -140,32 +135,25 @@ bool BrokerShell::OpenLogFile()
   return true;
 }
 
-bool BrokerShell::LoadBrokerConfig()
+void BrokerShell::LoadBrokerConfig()
 {
+  broker_config_.SetDefaults();  // Start with defaults - settings will be changed as needed.
+
   auto conf_file_pair = os_interface_.GetConfFile(log_);
   if (!conf_file_pair.second.is_open())
   {
+    broker_config_.enable_broker = false;
     if (conf_file_pair.first.empty())
-    {
-      log_.Notice("Error opening configuration file. Proceeding with default settings...");
-    }
+      log_.Notice("Error opening configuration file.");
     else
-    {
-      log_.Notice("Error opening configuration file located at path \"%s\". Proceeding with default settings...",
-                  conf_file_pair.first.c_str());
-    }
-    broker_config_.SetDefaults();
+      log_.Notice("Error opening configuration file located at path \"%s\".", conf_file_pair.first.c_str());
   }
 
   log_.Info("Reading configuration file at %s...", conf_file_pair.first.c_str());
 
   auto parse_res = broker_config_.Read(conf_file_pair.second, &log_);
   if (parse_res != BrokerConfig::ParseResult::kOk)
-  {
-    log_.Critical("FATAL: Error while reading configuration file.");
-    return false;
-  }
-  return true;
+    broker_config_.enable_broker = false;  // Error was already logged in the Read call above.
 }
 
 void BrokerShell::HandleScopeChanged(const std::string& new_scope)
