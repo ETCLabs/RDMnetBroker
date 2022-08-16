@@ -678,7 +678,7 @@ TEST_F(TestBrokerConfig, SetDefaultsRestoresDefaultsConsistently)
   config_.settings.limits.reject_connections = 6u;
   config_.settings.scope = "test123";
   config_.settings.listen_port = 1234u;
-  config_.settings.listen_interfaces.push_back(kTestUuid);
+  config_.settings.listen_interfaces.push_back("eth0");
 
   // Now try restoring defaults again and verify they're the same as the original defaults
   config_.SetDefaults();
