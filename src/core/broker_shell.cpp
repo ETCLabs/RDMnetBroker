@@ -72,6 +72,10 @@ bool BrokerShell::Run(bool /*debug_mode*/)
           return false;
         }
       }
+      else
+      {
+        log_.Info("Running with broker functionality disabled...");
+      }
     }
 
     if (shutdown_requested_)
