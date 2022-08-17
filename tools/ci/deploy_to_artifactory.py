@@ -1,4 +1,4 @@
-"""Deploys binaries to a GitHub release given the specified tag name."""
+"""Deploys binaries to Artifactory with the specified version."""
 import argparse
 import os
 import sys
