@@ -97,10 +97,10 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
     NotifyIpInterfaceChange(AF_UNSPEC, InterfaceChangeCallback, nullptr, FALSE, &change_notif_handle);
 
     // Also set up config change detection
-    std::atomic_bool stop_config_change_detection(false);
+    bool stop_config_change_detection = false;
     etcpal::Thread   config_change_detection_thread([&stop_config_change_detection]() {
       HANDLE change_handle = InitConfigChangeDetectionHandle();
-      while (!stop_config_change_detection.load(std::memory_order_relaxed) && ProcessConfigChanges(change_handle))
+      while (!stop_config_change_detection && ProcessConfigChanges(change_handle))
         ;
     });
 
@@ -108,7 +108,7 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
       result = 0;
 
     // Stop config change detection
-    stop_config_change_detection.store(true, std::memory_order_relaxed);
+    stop_config_change_detection = true;
     config_change_detection_thread.Join();
 
     // Cancel network change detection
