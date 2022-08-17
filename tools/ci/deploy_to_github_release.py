@@ -37,7 +37,7 @@ def deploy_binaries(version: str):
     new_release.upload_asset("RDMnetBroker_x86.msm")
     new_release.upload_asset("RDMnetBroker_x64.msi")
     new_release.upload_asset("RDMnetBroker_x64.msm")
-#    new_release.upload_asset("RDMnetBroker.pkg")
+    new_release.upload_asset("RDMnetBroker.pkg")
 
 
 def main():

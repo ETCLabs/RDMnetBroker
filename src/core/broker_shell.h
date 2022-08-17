@@ -25,7 +25,9 @@
 #include <array>
 #include <atomic>
 #include "etcpal/inet.h"
+#include "etcpal/cpp/mutex.h"
 #include "etcpal/cpp/log.h"
+#include "etcpal/cpp/timer.h"
 #include "rdmnet/cpp/broker.h"
 #include "broker_config.h"
 #include "broker_os_interface.h"
@@ -39,7 +41,7 @@ public:
   BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface) {}
   bool Run(bool debug_mode = false);
 
-  void NetworkChanged();
+  void RequestRestart(uint32_t cooldown_ms = 0u);
   void AsyncShutdown();
 
   void PrintVersion();
@@ -52,9 +54,11 @@ private:
   BrokerConfig broker_config_;
 
   // Handle changes at runtime
-  std::atomic<bool> restart_requested_{false};
-  bool              shutdown_requested_{false};
-  std::string       new_scope_;
+  mutable etcpal::Mutex lock_;  // These are guarded by this lock
+  etcpal::Timer         restart_timer_;
+  bool                  restart_requested_{false};
+  bool                  shutdown_requested_{false};
+  std::string           new_scope_;
 
   bool OpenLogFile();
   bool LoadBrokerConfig();
@@ -63,6 +67,10 @@ private:
   void PrintWarningMessage();
 
   void ApplySettingsChanges(rdmnet::Broker::Settings& settings);
+
+  bool TimeToRestartBroker();
+
+  void LockedRequestRestart(uint32_t cooldown_ms = 0u);
 };
 
 #endif  // BROKER_SHELL_H_
