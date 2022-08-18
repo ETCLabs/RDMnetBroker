@@ -28,8 +28,9 @@
 #include "service_utils.h"
 #include "broker_version.h"
 
-constexpr const WCHAR                  kRelativeConfFileName[] = L"\\ETC\\RDMnetBroker\\broker.conf";
-static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetBroker"};
+constexpr const WCHAR                  kRelativeConfDirName[] = L"\\ETC\\RDMnetBroker\\Config";
+constexpr const WCHAR                  kConfFileName[] = L"broker.conf";
+static const std::vector<std::wstring> kRelativeLogFilePath = {L"ETC", L"RDMnetBroker", L"Logs"};
 static const std::wstring              kLogFileName = L"broker.log";
 static constexpr int                   kMaxLogRotationFiles = 5;
 
@@ -72,6 +73,11 @@ WindowsBrokerOsInterface::~WindowsBrokerOsInterface()
 {
   if (log_file_)
     fclose(log_file_);
+}
+
+std::wstring WindowsBrokerOsInterface::GetConfigPath()
+{
+  return program_data_path_ + kRelativeConfDirName;
 }
 
 std::string WindowsBrokerOsInterface::GetLogFilePath() const
@@ -148,7 +154,7 @@ std::pair<std::string, std::ifstream> WindowsBrokerOsInterface::GetConfFile(etcp
     return std::make_pair(std::string{}, std::ifstream{});
   }
 
-  std::wstring  conf_file_path = program_data_path_ + kRelativeConfFileName;
+  std::wstring  conf_file_path = GetConfigPath() + L"\\" + kConfFileName;
   std::ifstream conf_file(conf_file_path);
 
   return std::make_pair(ConvertWstringToUtf8(conf_file_path), std::move(conf_file));

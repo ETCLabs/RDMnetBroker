@@ -46,7 +46,6 @@ protected:
   }
 
   testing::NiceMock<MockBrokerOsInterface> os_interface_;
-  BrokerShell                              shell_{os_interface_};
 };
 
 // TODO - if these tests don't work as expected, we might start a real broker and enter an infinite
@@ -56,11 +55,7 @@ protected:
 TEST_F(TestBrokerShell, DoesNotStartIfOpenLogFileFails)
 {
   EXPECT_CALL(os_interface_, OpenLogFile()).WillOnce(Return(false));
-  EXPECT_FALSE(shell_.Run());
-}
 
-TEST_F(TestBrokerShell, DoesNotStartIfGetConfFileFails)
-{
-  EXPECT_CALL(os_interface_, GetConfFile(_)).WillOnce(Return(ByMove(std::make_pair("fake_path", std::ifstream{}))));
-  EXPECT_FALSE(shell_.Run());
+  BrokerShell shell{os_interface_};
+  EXPECT_FALSE(shell.Run());
 }

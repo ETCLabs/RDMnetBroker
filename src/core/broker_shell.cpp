@@ -26,58 +26,79 @@
 #include "rdmnet/cpp/common.h"
 #include "broker_version.h"
 
+BrokerShell::BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface)
+{
+  if (OpenLogFile())
+  {
+    if (log_.Startup(os_interface_))
+    {
+      LoadBrokerConfig();
+      log_.SetLogMask(broker_config_.log_mask);
+      ready_to_run_ = true;
+    }
+  }
+}
+
+BrokerShell::~BrokerShell()
+{
+  if (ready_to_run_)
+    log_.Shutdown();
+}
+
 bool BrokerShell::Run(bool /*debug_mode*/)
 {
-  if (!OpenLogFile())
+  if (!ready_to_run_)
     return false;
-
-  if (!log_.Startup(os_interface_))
-    return false;
-
-  if (!LoadBrokerConfig())
-  {
-    log_.Shutdown();
-    return false;
-  }
-
-  log_.SetLogMask(broker_config_.log_mask);
 
   if (!rdmnet::Init(log_))
-  {
-    log_.Shutdown();
     return false;
-  }
 
-  if (!broker_.Startup(broker_config_.settings, &log_, this))
-  {
-    rdmnet::Deinit();
-    log_.Shutdown();
-    return false;
-  }
-
+  bool startup_broker = true;
   while (true)
   {
+    if (startup_broker)
+    {
+      startup_broker = false;
+
+      if (broker_config_.enable_broker)
+      {
+        auto res = broker_.Startup(broker_config_.settings, &log_, this);
+        if (!res)
+        {
+          log_.Notice("Broker startup failed (%s), running with broker functionality disabled.", res.ToCString());
+          broker_config_.enable_broker = false;
+        }
+      }
+      else
+      {
+        log_.Info("Running with broker functionality disabled.");
+      }
+    }
+
     if (shutdown_requested_)
     {
       break;
     }
     else if (TimeToRestartBroker())
     {
-      log_.Info("Restart requested, restarting broker and applying changes");
+      log_.Info("Restart requested, restarting broker and applying changes...");
 
-      auto broker_settings = broker_.settings();
-      broker_.Shutdown();
+      if (broker_config_.enable_broker)
+        broker_.Shutdown();
 
-      ApplySettingsChanges(broker_settings);
-      broker_.Startup(broker_settings, &log_, this);
+      LoadBrokerConfig();
+      ApplySettingsChanges();
+
+      startup_broker = true;
     }
 
     etcpal_thread_sleep(300);
   }
 
-  broker_.Shutdown();
+  if (broker_config_.enable_broker)
+    broker_.Shutdown();
+
   rdmnet::Deinit();
-  log_.Shutdown();
   return true;
 }
 
@@ -114,32 +135,25 @@ bool BrokerShell::OpenLogFile()
   return true;
 }
 
-bool BrokerShell::LoadBrokerConfig()
+void BrokerShell::LoadBrokerConfig()
 {
+  broker_config_.SetDefaults();  // Start with defaults - settings will be changed as needed.
+
   auto conf_file_pair = os_interface_.GetConfFile(log_);
   if (!conf_file_pair.second.is_open())
   {
+    broker_config_.enable_broker = false;
     if (conf_file_pair.first.empty())
-    {
-      log_.Notice("Error opening configuration file. Proceeding with default settings...");
-    }
+      log_.Notice("Error opening configuration file.");
     else
-    {
-      log_.Notice("Error opening configuration file located at path \"%s\". Proceeding with default settings...",
-                  conf_file_pair.first.c_str());
-    }
-    broker_config_.SetDefaults();
+      log_.Notice("Error opening configuration file located at path \"%s\".", conf_file_pair.first.c_str());
   }
 
   log_.Info("Reading configuration file at %s...", conf_file_pair.first.c_str());
 
   auto parse_res = broker_config_.Read(conf_file_pair.second, &log_);
   if (parse_res != BrokerConfig::ParseResult::kOk)
-  {
-    log_.Critical("FATAL: Error while reading configuration file.");
-    return false;
-  }
-  return true;
+    broker_config_.enable_broker = false;  // Error was already logged in the Read call above.
 }
 
 void BrokerShell::HandleScopeChanged(const std::string& new_scope)
@@ -149,13 +163,15 @@ void BrokerShell::HandleScopeChanged(const std::string& new_scope)
   LockedRequestRestart();
 }
 
-void BrokerShell::ApplySettingsChanges(rdmnet::Broker::Settings& settings)
+void BrokerShell::ApplySettingsChanges()
 {
   etcpal::MutexGuard guard(lock_);
 
+  log_.SetLogMask(broker_config_.log_mask);
+
   if (!new_scope_.empty())
   {
-    settings.scope = new_scope_;
+    broker_config_.settings.scope = new_scope_;
     new_scope_.clear();
   }
 }

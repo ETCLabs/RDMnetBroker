@@ -28,6 +28,8 @@ public:
   WindowsBrokerOsInterface();
   ~WindowsBrokerOsInterface();
 
+  std::wstring GetConfigPath();
+
   // BrokerOsInterface
   std::string                           GetLogFilePath() const override;
   bool                                  OpenLogFile() override;
@@ -38,6 +40,8 @@ public:
   void                 HandleLogMessage(const EtcPalLogStrings& strings) override;
 
 private:
+  static std::wstring GetProgramDataPath();
+
   std::wstring program_data_path_;
   std::wstring log_file_path_;
   FILE*        log_file_{nullptr};

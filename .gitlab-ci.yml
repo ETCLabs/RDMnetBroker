@@ -67,7 +67,7 @@ include:
     ref: v2.0.1
     file: '/ci-yml/deploy-versioned-build.yml'
 
-deploy-artifacts:
+github-deploy:
   stage: deploy
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $NEW_BUILD_VERSION =~ /^\d+\.\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_NAME == "main"'
@@ -77,3 +77,14 @@ deploy-artifacts:
   script:
     - pip install requests PyGithub
     - python3 tools/ci/deploy_to_github_release.py ${NEW_BUILD_VERSION}
+
+artifactory-deploy:
+  stage: deploy
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $NEW_BUILD_VERSION =~ /^\d+\.\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_NAME == "main"'
+  tags:
+    - etc-linux-docker
+  image: etc-docker.artifactory.etcconnect.com/python:latest
+  script:
+    - pip install requests
+    - python3 tools/ci/deploy_to_artifactory.py ${NEW_BUILD_VERSION}

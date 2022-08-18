@@ -59,6 +59,9 @@ private:
                                                     IN PMIB_IPINTERFACE_ROW  Row,
                                                     IN MIB_NOTIFICATION_TYPE NotificationType);
 
+  static HANDLE InitConfigChangeDetectionHandle();
+  static bool   ProcessConfigChanges(HANDLE change_handle);
+
   static BrokerService* service_;  // The singleton service instance.
 
   WindowsBrokerOsInterface os_interface_;

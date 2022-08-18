@@ -25,6 +25,8 @@
 #include <utility>
 #include "gtest/gtest.h"
 
+const std::string kTestUuid = "4958ac8f-cd5e-42cd-ab7e-9797b0efd3ac";
+
 class TestBrokerConfig : public testing::Test
 {
 protected:
@@ -43,8 +45,7 @@ protected:
 // correctly.
 TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
 {
-  const std::string kCid = "4958ac8f-cd5e-42cd-ab7e-9797b0efd3ac";
-  const uint16_t    kDynamicUidManu = 25972;
+  const uint16_t kDynamicUidManu = 25972;
 
   const std::string kDnsServiceInstanceName = "My ETC RDMnet Broker";
   const std::string kDnsManufacturer = "ETC";
@@ -64,7 +65,7 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
   // clang-format off
   const std::string kFullValidConfig = R"(
     {
-      "cid": ")" + kCid + R"(",
+      "cid": ")" + kTestUuid + R"(",
       "uid": {
         "type": "dynamic",
         "manufacturer_id": )" + std::to_string(kDynamicUidManu) + R"(
@@ -99,7 +100,7 @@ TEST_F(TestBrokerConfig, FullValidConfigParsedCorrectly)
   std::istringstream test_stream(kFullValidConfig);
   ASSERT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kOk);
 
-  EXPECT_EQ(config_.settings.cid.ToString(), kCid);
+  EXPECT_EQ(config_.settings.cid.ToString(), kTestUuid);
 
   EXPECT_TRUE(config_.settings.uid.IsDynamicUidRequest());
   EXPECT_EQ(config_.settings.uid.manufacturer_id(), kDynamicUidManu);
@@ -655,4 +656,45 @@ TEST_F(TestBrokerConfig, ValidMaxRejectConnectionsParsedCorrectly)
 {
   TestValidUnsignedIntValueHelper("max_reject_connections",
                                   [](const auto& settings) { return settings.limits.reject_connections; });
+}
+
+TEST_F(TestBrokerConfig, SetDefaultsRestoresDefaultsConsistently)
+{
+  // Generate defaults to compare against later from a freshly-constructed config
+  config_ = BrokerConfig();
+  config_.SetDefaults();
+  auto initial_defaults = config_;
+
+  // Change a good number of settings from their defaults
+  config_.enable_broker = false;
+  config_.settings.cid = etcpal::Uuid::FromString(kTestUuid);
+  config_.settings.uid = rdm::Uid(0x1234u, 0x56789012u);
+  config_.settings.dns.service_instance_name = "TestSrvName";
+  config_.settings.limits.connections = 1u;
+  config_.settings.limits.controllers = 2u;
+  config_.settings.limits.controller_messages = 3u;
+  config_.settings.limits.devices = 4u;
+  config_.settings.limits.device_messages = 5u;
+  config_.settings.limits.reject_connections = 6u;
+  config_.settings.scope = "test123";
+  config_.settings.listen_port = 1234u;
+  config_.settings.listen_interfaces.push_back("eth0");
+
+  // Now try restoring defaults again and verify they're the same as the original defaults
+  config_.SetDefaults();
+
+  EXPECT_EQ(config_.settings.cid, initial_defaults.settings.cid);
+  EXPECT_EQ(config_.settings.uid, initial_defaults.settings.uid);
+  EXPECT_EQ(config_.settings.dns.service_instance_name, initial_defaults.settings.dns.service_instance_name);
+  EXPECT_EQ(config_.settings.limits.connections, initial_defaults.settings.limits.connections);
+  EXPECT_EQ(config_.settings.limits.controllers, initial_defaults.settings.limits.controllers);
+  EXPECT_EQ(config_.settings.limits.controller_messages, initial_defaults.settings.limits.controller_messages);
+  EXPECT_EQ(config_.settings.limits.devices, initial_defaults.settings.limits.devices);
+  EXPECT_EQ(config_.settings.limits.device_messages, initial_defaults.settings.limits.device_messages);
+  EXPECT_EQ(config_.settings.limits.reject_connections, initial_defaults.settings.limits.reject_connections);
+  EXPECT_EQ(config_.settings.scope, initial_defaults.settings.scope);
+  EXPECT_EQ(config_.settings.listen_port, initial_defaults.settings.listen_port);
+  EXPECT_EQ(config_.settings.listen_interfaces, initial_defaults.settings.listen_interfaces);
+  EXPECT_EQ(config_.log_mask, initial_defaults.log_mask);
+  EXPECT_EQ(config_.enable_broker, initial_defaults.enable_broker);
 }

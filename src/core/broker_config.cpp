@@ -363,7 +363,7 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config, auto log) {
       return ValidateAndStoreString("/scope", val, config.settings.scope, E133_SCOPE_STRING_PADDED_LENGTH -1, log, false);
     },
-    std::function<void(BrokerConfig&)>() // Leave the default constructed scope value.
+    [](auto& config) { config.settings.scope = E133_DEFAULT_SCOPE; }
   },
   {
     "/listen_port"_json_pointer,
@@ -371,19 +371,19 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config, auto log) {
       return ValidateAndStoreInt<uint16_t>("/listen_port", val, config.settings.listen_port, log, std::make_pair<uint16_t, uint16_t>(1024, 65535));
     },
-    std::function<void(BrokerConfig&)>() // Leave the default constructed port value.
+    [](auto& config) { config.settings.listen_port = 0u; }
   },
   {
     "/listen_interfaces"_json_pointer,
     json::value_t::array,
     ValidateAndStoreInterfaceList,
-    std::function<void(BrokerConfig&)>() // Leave the default constructed listen_interfaces value.
+    [](auto& config) { config.settings.listen_interfaces.clear(); }
   },
   {
     "/log_level"_json_pointer,
     json::value_t::string,
     ValidateAndStoreLogLevel,
-    std::function<void(BrokerConfig&)>() // Leave the default constructed log_mask value.
+    [](auto& config) { config.log_mask = ETCPAL_LOG_UPTO(ETCPAL_LOG_INFO); }
   },
   {
     "/max_connections"_json_pointer,
@@ -391,7 +391,7 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config, auto log) {
       return ValidateAndStoreInt<unsigned int>("/max_connections", val, config.settings.limits.connections, log);
     },
-    std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
+    [](auto& config) { config.settings.limits.connections = 0; }
   },
   {
     "/max_controllers"_json_pointer,
@@ -399,7 +399,7 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config, auto log) {
       return ValidateAndStoreInt<unsigned int>("/max_controllers", val, config.settings.limits.controllers, log);
     },
-    std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
+    [](auto& config) { config.settings.limits.controllers = 0; }
   },
   {
     "/max_controller_messages"_json_pointer,
@@ -407,7 +407,7 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config, auto log) {
       return ValidateAndStoreInt<unsigned int>("/max_controller_messages", val, config.settings.limits.controller_messages, log);
     },
-    std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
+    [](auto& config) { config.settings.limits.controller_messages = 500; }
   },
   {
     "/max_devices"_json_pointer,
@@ -415,7 +415,7 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config, auto log) {
       return ValidateAndStoreInt<unsigned int>("/max_devices", val, config.settings.limits.devices, log);
     },
-    std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
+    [](auto& config) { config.settings.limits.devices = 0; }
   },
   {
     "/max_device_messages"_json_pointer,
@@ -423,7 +423,7 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config, auto log) {
       return ValidateAndStoreInt<unsigned int>("/max_device_messages", val, config.settings.limits.device_messages, log);
     },
-    std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
+    [](auto& config) { config.settings.limits.device_messages = 500; }
   },
   {
     "/max_reject_connections"_json_pointer,
@@ -431,7 +431,16 @@ static const Validator kSettingsValidatorArray[] = {
     [](const json& val, auto& config, auto log) {
       return ValidateAndStoreInt<unsigned int>("/max_reject_connections", val, config.settings.limits.reject_connections, log);
     },
-    std::function<void(BrokerConfig&)>() // Leave the default constructed value in the settings struct
+    [](auto& config) { config.settings.limits.reject_connections = 1000; }
+  },
+  {
+    "/enable_broker"_json_pointer,
+    json::value_t::boolean,
+    [](const json& val, auto& config, auto log) {
+      config.enable_broker = val;
+      return true;
+    },
+    [](auto& config) { config.enable_broker = true; }
   }
 };
 // clang-format on
@@ -444,10 +453,10 @@ BrokerConfig::ParseResult BrokerConfig::Read(std::istream& stream, etcpal::Logge
     stream >> current_;
     return ValidateCurrent(log);
   }
-  catch (json::parse_error)
+  catch (json::parse_error& e)
   {
     if (log)
-      log->Critical("Could not parse configuration file: Invalid JSON.");
+      log->Notice("Could not parse configuration file: %s", e.what());
     return ParseResult::kJsonParseErr;
   }
 }
