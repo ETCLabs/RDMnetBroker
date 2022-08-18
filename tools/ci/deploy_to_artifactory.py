@@ -14,7 +14,7 @@ def upload_file(local_name: str, version: str):
     """Uploads the specified staged binary to Artifactory."""
     version_split = version.split('.')
     num_digits = len(version_split)
-    if(num_digits < 4)
+    if(num_digits < 4):
         print(f"The provided version {version} is invalid because it only has {num_digits} digits.")
         sys.exit(1)
     
