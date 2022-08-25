@@ -26,7 +26,7 @@
 #include "rdmnet/cpp/common.h"
 #include "broker_version.h"
 
-BrokerShell::BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface)
+bool BrokerShell::Init()
 {
   if (OpenLogFile())
   {
@@ -37,9 +37,11 @@ BrokerShell::BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_int
       ready_to_run_ = true;
     }
   }
+
+  return ready_to_run_;
 }
 
-BrokerShell::~BrokerShell()
+void BrokerShell::Deinit()
 {
   if (ready_to_run_)
     log_.Shutdown();

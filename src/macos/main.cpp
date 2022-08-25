@@ -34,11 +34,17 @@ void HandleSignal(int signum)
 
 int main()
 {
+  if (!service.Init())
+    return 1;
+
   // As a launchd daemon, we must set up a SIGTERM handler
   signal(SIGTERM, HandleSignal);
 
+  int retval = 0;
   if (!service.Run())
-    return 1;
+    retval = 1;
 
-  return 0;  // Getting here means the main loop terminated, likely due to SIGTERM.
+  service.Deinit();
+
+  return retval;  // If Run() succeeded, getting here means the main loop terminated, likely due to SIGTERM.
 }
