@@ -57,5 +57,6 @@ TEST_F(TestBrokerShell, DoesNotStartIfOpenLogFileFails)
   EXPECT_CALL(os_interface_, OpenLogFile()).WillOnce(Return(false));
 
   BrokerShell shell{os_interface_};
+  EXPECT_FALSE(shell.Init());
   EXPECT_FALSE(shell.Run());
 }

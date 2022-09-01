@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <cstdio>
+#include <cstdlib>
 #include <winsock2.h>
 #include <windows.h>
 #include "service_config.h"
@@ -53,25 +54,33 @@ int wmain(int argc, wchar_t* argv[])
   if (!service)
   {
     std::wprintf(L"Error: Couldn't instantiate Broker service.\n");
-    return 1;
+    return EXIT_FAILURE;
   }
 
+  if (!service->Init())
+  {
+    std::wprintf(L"Error: Couldn't initialize Broker service.\n");
+    return EXIT_FAILURE;
+  }
+
+  bool run_service = true;
+  int  retval = EXIT_SUCCESS;
   if (argc > 1)
   {
     if (_wcsicmp(L"-version", argv[1]) == 0)
     {
       service->PrintVersion();
-      return 0;
+      run_service = false;
     }
     if (_wcsicmp(L"-install", argv[1]) == 0)
     {
       InstallService();
-      return 0;
+      run_service = false;
     }
     else if (_wcsicmp(L"-remove", argv[1]) == 0)
     {
       UninstallService();
-      return 0;
+      run_service = false;
     }
     else if (_wcsicmp(L"-debug", argv[1]) == 0)
     {
@@ -80,25 +89,28 @@ int wmain(int argc, wchar_t* argv[])
     else
     {
       PrintUsage(argv[0]);
-      return 1;
+      run_service = false;
+      retval = EXIT_FAILURE;
     }
   }
 
   // Got to here without returning - we will either run or debug.
   if (debug_mode)
   {
-    return service->Debug();
+    retval = service->Debug();
   }
-  else
+  else if (run_service)
   {
     if (!BrokerService::RunService(service.get()))
     {
       wchar_t error_msg[256];
       GetLastErrorMessage(error_msg, 256);
       std::wprintf(L"Service failed to run with error: '%s'\n", error_msg);
-      return 1;
+      retval = EXIT_FAILURE;
     }
   }
 
-  return 0;
+  service->Deinit();
+
+  return retval;
 }
