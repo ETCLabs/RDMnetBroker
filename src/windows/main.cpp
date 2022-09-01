@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <cstdio>
+#include <cstdlib>
 #include <winsock2.h>
 #include <windows.h>
 #include "service_config.h"
@@ -53,17 +54,17 @@ int wmain(int argc, wchar_t* argv[])
   if (!service)
   {
     std::wprintf(L"Error: Couldn't instantiate Broker service.\n");
-    return 1;
+    return EXIT_FAILURE;
   }
 
   if (!service->Init())
   {
     std::wprintf(L"Error: Couldn't initialize Broker service.\n");
-    return 1;
+    return EXIT_FAILURE;
   }
 
   bool run_service = true;
-  int  retval = 0;
+  int  retval = EXIT_SUCCESS;
   if (argc > 1)
   {
     if (_wcsicmp(L"-version", argv[1]) == 0)
@@ -89,7 +90,7 @@ int wmain(int argc, wchar_t* argv[])
     {
       PrintUsage(argv[0]);
       run_service = false;
-      retval = 1;
+      retval = EXIT_FAILURE;
     }
   }
 
@@ -105,7 +106,7 @@ int wmain(int argc, wchar_t* argv[])
       wchar_t error_msg[256];
       GetLastErrorMessage(error_msg, 256);
       std::wprintf(L"Service failed to run with error: '%s'\n", error_msg);
-      retval = 1;
+      retval = EXIT_FAILURE;
     }
   }
 
