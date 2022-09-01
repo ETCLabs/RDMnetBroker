@@ -23,6 +23,7 @@
 #include "broker_service.h"
 
 #include <iostream>
+#include <stdlib.h>
 
 static BrokerService service;
 
@@ -35,14 +36,14 @@ void HandleSignal(int signum)
 int main()
 {
   if (!service.Init())
-    return 1;
+    return EXIT_FAILURE;
 
   // As a launchd daemon, we must set up a SIGTERM handler
   signal(SIGTERM, HandleSignal);
 
-  int retval = 0;
+  int retval = EXIT_SUCCESS;
   if (!service.Run())
-    retval = 1;
+    retval = EXIT_FAILURE;
 
   service.Deinit();
 
