@@ -20,6 +20,7 @@
 #ifndef BROKER_SERVICE_H_
 #define BROKER_SERVICE_H_
 
+#include <cstdlib>
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
@@ -39,7 +40,7 @@ public:
   bool Init() { return broker_shell_.Init(); }
   void Deinit() { broker_shell_.Deinit(); }
 
-  int Debug() { return (broker_shell_.Run(true) ? 0 : 1); }
+  int Debug() { return (broker_shell_.Run(true) ? EXIT_SUCCESS : EXIT_FAILURE); }
 
   void SetServiceStatus(DWORD current_state, DWORD win32_error = NO_ERROR, DWORD service_specific_error = 0);
   void PrintVersion() { broker_shell_.PrintVersion(); }
