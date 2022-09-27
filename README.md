@@ -47,4 +47,4 @@ RDMnet Broker development is using Git for revision control.
 
 ## License
 
-RDMnet Broker is licensed under the Apache License 2.0. RDMnet Broker also incorporates the [RDMnet](https://github.com/ETCLabs/RDMnet) libraries, which have additional Licensing terms.
+RDMnet Broker is licensed under the Apache License 2.0. RDMnet Broker also incorporates the [RDMnet](https://github.com/ETCLabs/RDMnet) library, which has additional licensing terms.
