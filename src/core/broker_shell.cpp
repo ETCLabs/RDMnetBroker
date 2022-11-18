@@ -154,7 +154,9 @@ void BrokerShell::LoadBrokerConfig()
   log_.Info("Reading configuration file at %s...", conf_file_pair.first.c_str());
 
   auto parse_res = broker_config_.Read(conf_file_pair.second, &log_);
-  if (parse_res != BrokerConfig::ParseResult::kOk)
+
+  // kInvalidSetting is treated as non-fatal because it makes sure default values are used in place of invalid ones.
+  if ((parse_res != BrokerConfig::ParseResult::kOk) && (parse_res != BrokerConfig::ParseResult::kInvalidSetting))
     broker_config_.enable_broker = false;  // Error was already logged in the Read call above.
 }
 
