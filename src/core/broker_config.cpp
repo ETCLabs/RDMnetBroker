@@ -504,9 +504,7 @@ BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(etcpal::Logger* log)
           setting.store_default(*this);
           res = ParseResult::kInvalidSetting;
         }
-
-        // Try to validate the setting's value.
-        if (!setting.validate_and_store(val, *this, log))
+        else if (!setting.validate_and_store(val, *this, log))  // Try to validate the setting's value.
         {
           setting.store_default(*this);
           res = ParseResult::kInvalidSetting;
