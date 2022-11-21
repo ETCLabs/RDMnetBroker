@@ -40,7 +40,7 @@ public:
   {
     kFileOpenErr,
     kJsonParseErr,
-    kInvalidSetting,
+    kInvalidSetting,  // This is non-fatal since invalid settings are swapped with their respective defaults.
     kOk
   };
 

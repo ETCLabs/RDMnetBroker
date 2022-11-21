@@ -28,14 +28,16 @@
 #include <utility>
 #include "etcpal/uuid.h"
 
-constexpr const char kValidationFailLogPrefix[] = "Could not parse configuration file: ";
+constexpr const char kValidationFailLogPrefix[] = "Invalid value found in configuration file: ";
+constexpr const char kValidationFailLogPostfix[] = " (default will be used instead).";
 
 template <typename... Args>
 void LogParseError(etcpal::Logger* log, const std::string& format, Args&&... args)
 {
   if (log)
   {
-    log->Critical(std::string(kValidationFailLogPrefix + format).c_str(), std::forward<Args>(args)...);
+    log->Notice(std::string(kValidationFailLogPrefix + format + kValidationFailLogPostfix).c_str(),
+                std::forward<Args>(args)...);
   }
 }
 
@@ -46,10 +48,10 @@ struct Validator final
   const json::json_pointer pointer;
   // The expected value type
   const json::value_t type;
-  // A function to validate and store the value in the config's settings structure.
+  // A function to validate and store the value in the config's settings structure. This must be provided.
   std::function<bool(const json&, BrokerConfig&, etcpal::Logger*)> validate_and_store;
   // A function to store the default setting in the settings structure if the value is not present
-  // in the config file.
+  // in the config file or is invalid. This must be provided.
   std::function<void(BrokerConfig&)> store_default;
 };
 
@@ -63,7 +65,7 @@ bool ValidateAndStoreCid(const json& val, BrokerConfig& config, etcpal::Logger* 
   }
   else
   {
-    LogParseError(log, "\"%s\" is not a valid CID.", std::string(val).c_str());
+    LogParseError(log, "\"%s\" is not a valid CID", std::string(val).c_str());
     return false;
   }
 }
@@ -78,7 +80,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
 {
   if (!val.contains("type"))
   {
-    LogParseError(log, "The \"uid\" object must contain a \"type\" field.");
+    LogParseError(log, "The \"uid\" object must contain a \"type\" field");
     return false;
   }
   if (!val["type"].is_string())
@@ -88,7 +90,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
   }
   if (!val.contains("manufacturer_id"))
   {
-    LogParseError(log, "The \"uid\" object must contain a \"manufacturer_id\" field.");
+    LogParseError(log, "The \"uid\" object must contain a \"manufacturer_id\" field");
     return false;
   }
   if (!val["manufacturer_id"].is_number_integer())
@@ -103,7 +105,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
 
   if (manufacturer_id <= 0 || manufacturer_id >= 0x8000)
   {
-    LogParseError(log, "UID: \"%" PRId64 "\" is not a valid Manufacturer ID.", manufacturer_id);
+    LogParseError(log, "UID: \"%" PRId64 "\" is not a valid Manufacturer ID", manufacturer_id);
     return false;
   }
 
@@ -111,7 +113,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
   {
     if (!val.contains("device_id"))
     {
-      LogParseError(log, "When \"/uid/type\" is \"static\", the \"uid\" object must contain a \"device_id\" field.");
+      LogParseError(log, "When \"/uid/type\" is \"static\", the \"uid\" object must contain a \"device_id\" field");
       return false;
     }
     if (!val["device_id"].is_number_integer())
@@ -124,7 +126,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
     const int64_t device_id = val["device_id"];
     if (device_id < 0 || device_id > 0xffffffff)
     {
-      LogParseError(log, "Static UID: \"%" PRId64 "\" is not a valid Device ID.", device_id);
+      LogParseError(log, "Static UID: \"%" PRId64 "\" is not a valid Device ID", device_id);
       return false;
     }
 
@@ -136,7 +138,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
     if (val.contains("device_id"))
     {
       LogParseError(log,
-                    "When \"/uid/type\" is \"dynamic\", the \"uid\" object must not contain a \"device_id\" field.");
+                    "When \"/uid/type\" is \"dynamic\", the \"uid\" object must not contain a \"device_id\" field");
       return false;
     }
     config.settings.uid = rdm::Uid::DynamicUidRequest(static_cast<uint16_t>(manufacturer_id));
@@ -144,7 +146,7 @@ bool ValidateAndStoreUid(const json& val, BrokerConfig& config, etcpal::Logger* 
   }
   else
   {
-    LogParseError(log, "The field \"/uid/type\" must be one of \"static\" or \"dynamic\".");
+    LogParseError(log, "The field \"/uid/type\" must be one of \"static\" or \"dynamic\"");
     return false;
   }
 }
@@ -178,7 +180,7 @@ bool ValidateAndStoreString(const char*     key_ptr,
     }
     else
     {
-      LogParseError(log, "String value \"%s\" is too long for field \"%s\" of maximum length %zu.", str_val.c_str(),
+      LogParseError(log, "String value \"%s\" is too long for field \"%s\" of maximum length %zu", str_val.c_str(),
                     key_ptr, max_size);
       return false;
     }
@@ -220,7 +222,7 @@ bool ValidateAndStoreInt(
   {
     LogParseError(log,
                   std::string("Integer value \"%" PRId64 "\" is outside allowable range [") +
-                      FormatStringOf<IntType>::value + ", " + FormatStringOf<IntType>::value + "] for field \"%s\".",
+                      FormatStringOf<IntType>::value + ", " + FormatStringOf<IntType>::value + "] for field \"%s\"",
                   int_val, limits.first, limits.second, key_ptr);
     return false;
   }
@@ -235,7 +237,7 @@ bool ValidateAndStoreInterfaceList(const json& val, BrokerConfig& config, etcpal
   {
     if (listen_interface.type() != json::value_t::string)
     {
-      LogParseError(log, "The array field \"/listen_interfaces\" may only contain values of type \"string\".");
+      LogParseError(log, "The array field \"/listen_interfaces\" may only contain values of type \"string\"");
       config.settings.listen_interfaces.clear();
       return false;
     }
@@ -274,7 +276,7 @@ bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, etcpal::Log
   auto              level_pair = kLogLevelOptions.find(log_level);
   if (level_pair == kLogLevelOptions.end())
   {
-    LogParseError(log, "The value for field \"/log_level\" must be one of " + GetLogLevelOptions() + ".");
+    LogParseError(log, "The value for field \"/log_level\" must be one of " + GetLogLevelOptions());
     return false;
   }
 
@@ -475,15 +477,20 @@ void BrokerConfig::SetDefaults()
 // valid.
 BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(etcpal::Logger* log)
 {
+  ParseResult res = ParseResult::kOk;
+
   for (const auto& setting : kSettingsValidatorArray)  // kSettingsValidatorArray must be iterated first to last
   {
+    assert(setting.store_default);
+    assert(setting.validate_and_store);
+
     // Check each key that matches an item in our settings array.
     if (current_.contains(setting.pointer))
     {
       const json val = current_[setting.pointer];
 
       // If a setting is set to "null" in the JSON, store the default value.
-      if (val.is_null() && setting.store_default)
+      if (val.is_null())
       {
         setting.store_default(*this);
       }
@@ -492,15 +499,15 @@ BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(etcpal::Logger* log)
         if (val.type() != setting.type)
         {
           // The value type of this item does not match the type of the corresponding default setting.
-          LogParseError(log, "The value for setting \"%s\" was of invalid type \"%s\".",
+          LogParseError(log, "The value for setting \"%s\" was of invalid type \"%s\"",
                         setting.pointer.to_string().c_str(), val.type_name());
-          return ParseResult::kInvalidSetting;
+          setting.store_default(*this);
+          res = ParseResult::kInvalidSetting;
         }
-
-        // Try to validate the setting's value.
-        if (!setting.validate_and_store(val, *this, log))
+        else if (!setting.validate_and_store(val, *this, log))  // Try to validate the setting's value.
         {
-          return ParseResult::kInvalidSetting;
+          setting.store_default(*this);
+          res = ParseResult::kInvalidSetting;
         }
       }
     }
@@ -508,8 +515,7 @@ BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(etcpal::Logger* log)
     {
       // The "store_default" function may not be present, in which case the default-constructed
       // value in the output settings is left as-is.
-      if (setting.store_default)
-        setting.store_default(*this);
+      setting.store_default(*this);
 
       if (log)
       {
@@ -518,5 +524,6 @@ BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(etcpal::Logger* log)
       }
     }
   }
-  return ParseResult::kOk;
+
+  return res;
 }
