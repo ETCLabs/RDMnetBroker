@@ -64,6 +64,9 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
       if (broker_config_.enable_broker)
       {
+        if (etcpal_netint_refresh_interfaces() != kEtcPalErrOk)
+          log_.Error("Error refreshing network interfaces - broker may not work correctly.");
+
         auto res = broker_.Startup(broker_config_.settings, &log_, this);
         if (!res)
         {

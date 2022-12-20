@@ -64,7 +64,9 @@ private:
                                                     IN PMIB_IPINTERFACE_ROW  Row,
                                                     IN MIB_NOTIFICATION_TYPE NotificationType);
 
+  static bool   InitAddrChangeDetection(LPOVERLAPPED overlap);
   static HANDLE InitConfigChangeDetectionHandle();
+  static bool   ProcessAddrChanges(LPOVERLAPPED overlap);
   static bool   ProcessConfigChanges(HANDLE change_handle);
 
   static BrokerService* service_;  // The singleton service instance.
