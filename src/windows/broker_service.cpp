@@ -18,7 +18,7 @@
  *****************************************************************************/
 
 #include "broker_service.h"
-#include <cassert>
+#include "broker_common.h"
 #include <strsafe.h>
 #include <system_error>
 
@@ -85,8 +85,11 @@ bool BrokerService::GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap)
   return true;
 }
 
-HANDLE BrokerService::InitConfigChangeDetectionHandle()
+etcpal::Expected<HANDLE> BrokerService::InitConfigChangeDetectionHandle()
 {
+  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+    return kEtcPalErrSys;
+
   std::wstring prefix(L"\\\\?\\");  // FindFirstChangeNotification requires this for wide paths
   std::wstring path = prefix + service_->os_interface_.GetConfigPath();
   return FindFirstChangeNotification(path.c_str(), false, FILE_NOTIFY_CHANGE_LAST_WRITE);
@@ -116,6 +119,9 @@ bool BrokerService::ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap)
 
 bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
 {
+  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+    return false;
+
   static constexpr DWORD kWaitMs = 200u;  // Keep this short for quick shutdown
   if ((change_handle == INVALID_HANDLE_VALUE) || (change_handle == nullptr))
   {
@@ -154,7 +160,7 @@ bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
 DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 {
   DWORD result = 1;
-  if (service_)
+  if (BROKER_ASSERT_VERIFY(service_, nullptr))
   {
     // Register with Windows for network change detection
     HANDLE ip_interface_change_handle = INVALID_HANDLE_VALUE;
@@ -179,8 +185,8 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
     // Also set up config change detection
     bool           stop_config_change_detection = false;
     etcpal::Thread config_change_detection_thread([&stop_config_change_detection]() {
-      HANDLE change_handle = InitConfigChangeDetectionHandle();
-      while (!stop_config_change_detection && ProcessConfigChanges(change_handle))
+      auto change_handle = InitConfigChangeDetectionHandle();
+      while (change_handle && !stop_config_change_detection && ProcessConfigChanges(*change_handle))
         ;
     });
 
@@ -208,6 +214,9 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 
 bool BrokerService::RunService(BrokerService* service)
 {
+  if (!BROKER_ASSERT_VERIFY(service, nullptr))
+    return false;
+
   service_ = service;
 
   SERVICE_TABLE_ENTRY serviceTable[] = {{const_cast<wchar_t*>(service->name_.c_str()), ServiceMain}, {NULL, NULL}};
@@ -220,7 +229,8 @@ bool BrokerService::RunService(BrokerService* service)
 
 void WINAPI BrokerService::ServiceMain(DWORD argc, PWSTR* argv)
 {
-  assert(service_ != nullptr);
+  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+    return;
 
   // Register the handler function for the service
   service_->status_handle_ = RegisterServiceCtrlHandler(service_->name_.c_str(), ServiceCtrlHandler);
@@ -250,6 +260,9 @@ void WINAPI BrokerService::ServiceMain(DWORD argc, PWSTR* argv)
 //
 void WINAPI BrokerService::ServiceCtrlHandler(DWORD control_code)
 {
+  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+    return;
+
   switch (control_code)
   {
     case SERVICE_CONTROL_STOP:
@@ -263,8 +276,11 @@ void WINAPI BrokerService::ServiceCtrlHandler(DWORD control_code)
   }
 }
 
-BrokerService::BrokerService(const wchar_t* service_name) : name_(service_name)
+BrokerService::BrokerService(const wchar_t* service_name)
 {
+  if (BROKER_ASSERT_VERIFY(service_name, nullptr))
+    name_ = std::wstring(service_name);
+
   status_.dwServiceType = SERVICE_WIN32_OWN_PROCESS;  // The service runs in its own process.
   status_.dwCurrentState = SERVICE_START_PENDING;     // The service is starting.
 

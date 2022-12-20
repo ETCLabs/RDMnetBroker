@@ -27,6 +27,7 @@
 #include <type_traits>
 #include <utility>
 #include "etcpal/uuid.h"
+#include "broker_common.h"
 
 constexpr const char kValidationFailLogPrefix[] = "Invalid value found in configuration file: ";
 constexpr const char kValidationFailLogPostfix[] = " (default will be used instead).";
@@ -159,6 +160,9 @@ bool ValidateAndStoreString(const char*     key_ptr,
                             etcpal::Logger* log,
                             bool            truncation_allowed = true)
 {
+  if (!BROKER_ASSERT_VERIFY(key_ptr, log))
+    return false;
+
   const std::string str_val = val;
   if (str_val.empty())
   {
@@ -216,6 +220,9 @@ bool ValidateAndStoreInt(
                                                                                  std::numeric_limits<IntType>::max()))
 {
   static_assert(std::is_integral<IntType>(), "This function can only be used with integral types.");
+
+  if (!BROKER_ASSERT_VERIFY(key_ptr, log))
+    return false;
 
   const int64_t int_val = val;
   if (int_val < limits.first || int_val > limits.second)

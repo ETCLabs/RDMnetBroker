@@ -28,6 +28,7 @@
 #include <iphlpapi.h>
 #include "broker_shell.h"
 #include "win_broker_os_interface.h"
+#include "etcpal/cpp/error.h"
 
 class BrokerService
 {
@@ -71,12 +72,12 @@ private:
                                                            _In_opt_ PMIB_UNICASTIPADDRESS_ROW Row,
                                                            _In_ MIB_NOTIFICATION_TYPE         NotificationType);
 
-  static bool   InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap);
-  static void   DeinitAddrChangeDetection(LPOVERLAPPED overlap);
-  static bool   GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap);
-  static HANDLE InitConfigChangeDetectionHandle();
-  static bool   ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap);
-  static bool   ProcessConfigChanges(HANDLE change_handle);
+  static bool                     InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap);
+  static void                     DeinitAddrChangeDetection(LPOVERLAPPED overlap);
+  static bool                     GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap);
+  static etcpal::Expected<HANDLE> InitConfigChangeDetectionHandle();
+  static bool                     ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap);
+  static bool                     ProcessConfigChanges(HANDLE change_handle);
 
   static BrokerService* service_;  // The singleton service instance.
 
