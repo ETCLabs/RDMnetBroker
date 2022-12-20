@@ -32,8 +32,10 @@
 /// \param[in] buf_size Size of the output buffer.
 void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size)
 {
-  if (msg_buf_out)
-    GetLastErrorMessage(GetLastError(), msg_buf_out, buf_size);
+  if (!BROKER_ASSERT_VERIFY(msg_buf_out, nullptr) || !BROKER_ASSERT_VERIFY(buf_size > 0, nullptr))
+    return;
+
+  GetLastErrorMessage(GetLastError(), msg_buf_out, buf_size);
 }
 
 /// \brief Get a descriptive string for the given error code.
@@ -45,19 +47,19 @@ void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size)
 /// \param[in] buf_size Size of the output buffer.
 void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size)
 {
-  if (msg_buf_out)
-  {
-    wchar_t* msg_buf = nullptr;
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-                  code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
-                  (LPWSTR)&msg_buf, 0, nullptr);
+  if (!BROKER_ASSERT_VERIFY(msg_buf_out, nullptr) || !BROKER_ASSERT_VERIFY(buf_size > 0, nullptr))
+    return;
 
-    if (msg_buf)
-    {
-      wcsncpy_s(msg_buf_out, buf_size, msg_buf, _TRUNCATE);
-      LocalFree(msg_buf);
-    }
-  }
+  wchar_t* msg_buf = nullptr;
+  FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+                code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
+                (LPWSTR)&msg_buf, 0, nullptr);
+
+  if (!BROKER_ASSERT_VERIFY(msg_buf, nullptr))
+    return;
+
+  wcsncpy_s(msg_buf_out, buf_size, msg_buf, _TRUNCATE);
+  LocalFree(msg_buf);
 }
 
 /// \brief Install this executable as a service to the local service control manager database.
