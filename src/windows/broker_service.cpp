@@ -48,7 +48,7 @@ bool BrokerService::InitAddrChangeDetection(LPOVERLAPPED overlap)
   HANDLE handle = INVALID_HANDLE_VALUE;
   overlap->hEvent = WSACreateEvent();
 
-  if (NotifyAddrChange(&handle, overlap) != NO_ERROR)
+  if ((NotifyAddrChange(&handle, overlap) != NO_ERROR) && (WSAGetLastError() != WSA_IO_PENDING))
   {
     service_->broker_shell_.log().Warning("WARNING: Failed to set up the address table change notification (%s).",
                                           std::system_category().message(GetLastError()).c_str());
