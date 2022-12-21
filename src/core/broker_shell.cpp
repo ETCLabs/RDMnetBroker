@@ -47,7 +47,7 @@ void BrokerShell::Deinit()
     log_.Shutdown();
 }
 
-bool BrokerShell::Run(bool /*debug_mode*/)
+bool BrokerShell::Run()
 {
   if (!ready_to_run_)
     return false;

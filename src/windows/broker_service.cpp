@@ -43,15 +43,12 @@ VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID              
   }
 }
 
-bool BrokerService::InitAddrChangeDetection(LPOVERLAPPED overlap)
+bool BrokerService::GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap)
 {
-  HANDLE handle = INVALID_HANDLE_VALUE;
-  overlap->hEvent = WSACreateEvent();
-
-  if ((NotifyAddrChange(&handle, overlap) != NO_ERROR) && (WSAGetLastError() != WSA_IO_PENDING))
+  if ((NotifyAddrChange(handle, overlap) != NO_ERROR) && (WSAGetLastError() != WSA_IO_PENDING))
   {
-    service_->broker_shell_.log().Warning("WARNING: Failed to set up the address table change notification (%s).",
-                                          std::system_category().message(GetLastError()).c_str());
+    service_->broker_shell_.log().Error("ERROR: Failed to set up the address table change notification (%s).",
+                                        std::system_category().message(GetLastError()).c_str());
     return false;
   }
 
@@ -65,15 +62,16 @@ HANDLE BrokerService::InitConfigChangeDetectionHandle()
   return FindFirstChangeNotification(path.c_str(), false, FILE_NOTIFY_CHANGE_LAST_WRITE);
 }
 
-bool BrokerService::ProcessAddrChanges(LPOVERLAPPED overlap)
+bool BrokerService::ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap)
 {
   static constexpr DWORD kWaitMs = 200u;  // Keep this short for quick shutdown
   DWORD                  status = WaitForSingleObject(overlap->hEvent, kWaitMs);
   switch (status)
   {
     case WAIT_OBJECT_0:  // The address table has changed
-      service_->broker_shell_.RequestRestart();
-      break;
+      service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
+      ResetEvent(overlap->hEvent);
+      return GetNextAddrChange(handle, overlap);
     case WAIT_TIMEOUT:  // The address table didn't change, do nothing
       break;
     default:  // WaitForSingleObject error
@@ -134,10 +132,13 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 
     bool           stop_addr_change_detection = false;
     etcpal::Thread addr_change_detection_thread([&stop_addr_change_detection]() {
+      HANDLE     handle = INVALID_HANDLE_VALUE;
       OVERLAPPED overlap;
-      if (InitAddrChangeDetection(&overlap))
+      overlap.hEvent = WSACreateEvent();
+
+      if (GetNextAddrChange(&handle, &overlap))
       {
-        while (!stop_addr_change_detection && ProcessAddrChanges(&overlap))
+        while (!stop_addr_change_detection && ProcessAddrChanges(&handle, &overlap))
           ;
 
         CancelIPChangeNotify(&overlap);

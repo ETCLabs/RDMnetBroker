@@ -38,12 +38,12 @@
 class BrokerShell : public rdmnet::Broker::NotifyHandler
 {
 public:
-  BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface) {};
+  BrokerShell(BrokerOsInterface& os_interface) : os_interface_(os_interface){};
 
   bool Init();
   void Deinit();
 
-  bool Run(bool debug_mode = false);
+  bool Run();
 
   void RequestRestart(uint32_t cooldown_ms = 0u);
   void AsyncShutdown();
