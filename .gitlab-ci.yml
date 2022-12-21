@@ -47,6 +47,9 @@ macos-build:
   tags:
     - ct-macos
   script:
+    - pip3 config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
+    - pip3 config set global.trusted-host artifactory.etcconnect.com
+    - pip3 install etcdevtool
     - python3 tools/ci/update_artifact_version.py
     - mkdir build
     - cd build
