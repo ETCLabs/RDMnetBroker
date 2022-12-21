@@ -71,6 +71,8 @@ private:
                                                            _In_opt_ PMIB_UNICASTIPADDRESS_ROW Row,
                                                            _In_ MIB_NOTIFICATION_TYPE         NotificationType);
 
+  static bool   InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap);
+  static void   DeinitAddrChangeDetection(LPOVERLAPPED overlap);
   static bool   GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap);
   static HANDLE InitConfigChangeDetectionHandle();
   static bool   ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap);
