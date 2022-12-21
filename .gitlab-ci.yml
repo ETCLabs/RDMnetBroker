@@ -25,9 +25,6 @@ windows-build:
         VCVARSALL_PLATFORM: amd64
         ARTIFACT_TYPE: x64
   script:
-    - pip config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
-    - pip config set global.trusted-host artifactory.etcconnect.com
-    - pip install etcdevtool
     - python tools\ci\update_artifact_version.py
     - mkdir build
     - cd build
@@ -50,9 +47,6 @@ macos-build:
   tags:
     - ct-macos
   script:
-    - pip config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
-    - pip config set global.trusted-host artifactory.etcconnect.com
-    - pip install etcdevtool
     - python3 tools/ci/update_artifact_version.py
     - mkdir build
     - cd build
