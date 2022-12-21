@@ -97,7 +97,7 @@ int wmain(int argc, wchar_t* argv[])
   // Got to here without returning - we will either run or debug.
   if (debug_mode)
   {
-    retval = service->Debug();
+    retval = service->Debug(service.get());
   }
   else if (run_service)
   {

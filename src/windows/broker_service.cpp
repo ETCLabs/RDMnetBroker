@@ -29,18 +29,60 @@ BrokerService* BrokerService::service_{nullptr};
 
 // The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
 // event is passed along to the BrokerShell instance, which restarts the broker.
-VOID NETIOAPI_API_ BrokerService::InterfaceChangeCallback(IN PVOID                 CallerContext,
-                                                          IN PMIB_IPINTERFACE_ROW  Row,
-                                                          IN MIB_NOTIFICATION_TYPE NotificationType)
+VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID                 CallerContext,
+                                                            IN PMIB_IPINTERFACE_ROW  Row,
+                                                            IN MIB_NOTIFICATION_TYPE NotificationType)
 {
   (void)CallerContext;
   (void)Row;
   (void)NotificationType;
 
   if (service_)
-  {
     service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
+}
+
+VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID                         CallerContext,
+                                                                 _In_opt_ PMIB_UNICASTIPADDRESS_ROW Row,
+                                                                 _In_ MIB_NOTIFICATION_TYPE         NotificationType)
+{
+  (void)CallerContext;
+  (void)Row;
+  (void)NotificationType;
+
+  if (service_)
+    service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
+}
+
+bool BrokerService::InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap)
+{
+  overlap->hEvent = WSACreateEvent();
+
+  if (overlap->hEvent != WSA_INVALID_EVENT)
+    return GetNextAddrChange(handle, overlap);
+
+  service_->broker_shell_.log().Error("ERROR: Failed to set up address table change detection (%s).",
+                                      std::system_category().message(GetLastError()).c_str());
+  return false;
+}
+
+void BrokerService::DeinitAddrChangeDetection(LPOVERLAPPED overlap)
+{
+  CancelIPChangeNotify(overlap);
+
+  if (overlap->hEvent != INVALID_HANDLE_VALUE)
+    WSACloseEvent(overlap->hEvent);
+}
+
+bool BrokerService::GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap)
+{
+  if ((NotifyAddrChange(handle, overlap) != NO_ERROR) && (WSAGetLastError() != WSA_IO_PENDING))
+  {
+    service_->broker_shell_.log().Error("ERROR: Failed to set up the next address table change notification (%s).",
+                                        std::system_category().message(GetLastError()).c_str());
+    return false;
   }
+
+  return true;
 }
 
 HANDLE BrokerService::InitConfigChangeDetectionHandle()
@@ -50,13 +92,35 @@ HANDLE BrokerService::InitConfigChangeDetectionHandle()
   return FindFirstChangeNotification(path.c_str(), false, FILE_NOTIFY_CHANGE_LAST_WRITE);
 }
 
+bool BrokerService::ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap)
+{
+  static constexpr DWORD kWaitMs = 200u;  // Keep this short for quick shutdown
+  DWORD                  status = WaitForSingleObject(overlap->hEvent, kWaitMs);
+  switch (status)
+  {
+    case WAIT_OBJECT_0:  // The address table has changed
+      service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
+      ResetEvent(overlap->hEvent);
+      return GetNextAddrChange(handle, overlap);
+    case WAIT_TIMEOUT:  // The address table didn't change, do nothing
+      break;
+    default:  // WaitForSingleObject error
+      service_->broker_shell_.log().Warning(
+          "WARNING: Failed to wait for the next address table change notification (GetLastError: '%s', status: %d).",
+          std::system_category().message(GetLastError()).c_str(), status);
+      return false;
+  }
+
+  return true;
+}
+
 bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
 {
   static constexpr DWORD kWaitMs = 200u;  // Keep this short for quick shutdown
   if ((change_handle == INVALID_HANDLE_VALUE) || (change_handle == nullptr))
   {
     service_->broker_shell_.log().Warning("WARNING: Failed to initialize broker config change notification (%s).",
-                                          std::system_category().message(GetLastError()));
+                                          std::system_category().message(GetLastError()).c_str());
     return false;
   }
   else
@@ -70,7 +134,7 @@ bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
         {
           service_->broker_shell_.log().Warning(
               "WARNING: Failed to set up the next broker config change notification (%s).",
-              std::system_category().message(GetLastError()));
+              std::system_category().message(GetLastError()).c_str());
           return false;
         }
         break;
@@ -79,7 +143,7 @@ bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
       default:  // WaitForSingleObject error
         service_->broker_shell_.log().Warning(
             "WARNING: Failed to wait for the next broker config change notification (%s).",
-            std::system_category().message(GetLastError()));
+            std::system_category().message(GetLastError()).c_str());
         return false;
     }
   }
@@ -93,12 +157,28 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
   if (service_)
   {
     // Register with Windows for network change detection
-    HANDLE change_notif_handle = nullptr;
-    NotifyIpInterfaceChange(AF_UNSPEC, InterfaceChangeCallback, nullptr, FALSE, &change_notif_handle);
+    HANDLE ip_interface_change_handle = INVALID_HANDLE_VALUE;
+    NotifyIpInterfaceChange(AF_UNSPEC, IpInterfaceChangeCallback, nullptr, FALSE, &ip_interface_change_handle);
+    HANDLE unicast_ip_address_change_handle = INVALID_HANDLE_VALUE;
+    NotifyUnicastIpAddressChange(AF_UNSPEC, UnicastIpAddressChangeCallback, nullptr, FALSE,
+                                 &unicast_ip_address_change_handle);
+
+    bool           stop_addr_change_detection = false;
+    etcpal::Thread addr_change_detection_thread([&stop_addr_change_detection]() {
+      HANDLE     handle = INVALID_HANDLE_VALUE;
+      OVERLAPPED overlap;
+      if (InitAddrChangeDetection(&handle, &overlap))
+      {
+        while (!stop_addr_change_detection && ProcessAddrChanges(&handle, &overlap))
+          ;
+
+        DeinitAddrChangeDetection(&overlap);
+      }
+    });
 
     // Also set up config change detection
-    bool stop_config_change_detection = false;
-    etcpal::Thread   config_change_detection_thread([&stop_config_change_detection]() {
+    bool           stop_config_change_detection = false;
+    etcpal::Thread config_change_detection_thread([&stop_config_change_detection]() {
       HANDLE change_handle = InitConfigChangeDetectionHandle();
       while (!stop_config_change_detection && ProcessConfigChanges(change_handle))
         ;
@@ -112,7 +192,11 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
     config_change_detection_thread.Join();
 
     // Cancel network change detection
-    CancelMibChangeNotify2(change_notif_handle);
+    stop_addr_change_detection = true;
+    addr_change_detection_thread.Join();
+
+    CancelMibChangeNotify2(unicast_ip_address_change_handle);
+    CancelMibChangeNotify2(ip_interface_change_handle);
 
     if (result != 0)
     {

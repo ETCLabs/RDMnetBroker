@@ -47,7 +47,7 @@ void BrokerShell::Deinit()
     log_.Shutdown();
 }
 
-bool BrokerShell::Run(bool /*debug_mode*/)
+bool BrokerShell::Run()
 {
   if (!ready_to_run_)
     return false;
@@ -64,6 +64,9 @@ bool BrokerShell::Run(bool /*debug_mode*/)
 
       if (broker_config_.enable_broker)
       {
+        if (etcpal_netint_refresh_interfaces() != kEtcPalErrOk)
+          log_.Error("Error refreshing network interfaces - broker may not work correctly.");
+
         auto res = broker_.Startup(broker_config_.settings, &log_, this);
         if (!res)
         {

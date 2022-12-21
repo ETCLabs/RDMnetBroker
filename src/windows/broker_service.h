@@ -40,7 +40,11 @@ public:
   bool Init() { return broker_shell_.Init(); }
   void Deinit() { broker_shell_.Deinit(); }
 
-  int Debug() { return (broker_shell_.Run(true) ? EXIT_SUCCESS : EXIT_FAILURE); }
+  int Debug(BrokerService* service)
+  {
+    service_ = service;
+    return (BrokerService::ServiceThread(nullptr) ? EXIT_FAILURE : EXIT_SUCCESS);
+  }
 
   void SetServiceStatus(DWORD current_state, DWORD win32_error = NO_ERROR, DWORD service_specific_error = 0);
   void PrintVersion() { broker_shell_.PrintVersion(); }
@@ -60,11 +64,18 @@ private:
 
   static DWORD WINAPI ServiceThread(LPVOID* arg);
 
-  static VOID NETIOAPI_API_ InterfaceChangeCallback(IN PVOID                 CallerContext,
-                                                    IN PMIB_IPINTERFACE_ROW  Row,
-                                                    IN MIB_NOTIFICATION_TYPE NotificationType);
+  static VOID NETIOAPI_API_ IpInterfaceChangeCallback(IN PVOID                 CallerContext,
+                                                      IN PMIB_IPINTERFACE_ROW  Row,
+                                                      IN MIB_NOTIFICATION_TYPE NotificationType);
+  static VOID NETIOAPI_API_ UnicastIpAddressChangeCallback(_In_ PVOID                         CallerContext,
+                                                           _In_opt_ PMIB_UNICASTIPADDRESS_ROW Row,
+                                                           _In_ MIB_NOTIFICATION_TYPE         NotificationType);
 
+  static bool   InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap);
+  static void   DeinitAddrChangeDetection(LPOVERLAPPED overlap);
+  static bool   GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap);
   static HANDLE InitConfigChangeDetectionHandle();
+  static bool   ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap);
   static bool   ProcessConfigChanges(HANDLE change_handle);
 
   static BrokerService* service_;  // The singleton service instance.
