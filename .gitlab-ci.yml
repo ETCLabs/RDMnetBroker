@@ -25,6 +25,10 @@ windows-build:
         VCVARSALL_PLATFORM: amd64
         ARTIFACT_TYPE: x64
   script:
+    - pip config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
+    - pip config set global.trusted-host artifactory.etcconnect.com
+    - pip install etcdevtool
+    - python tools\ci\update_artifact_version.py
     - mkdir build
     - cd build
     - cmake -G "Visual Studio 16 2019" $env:CMAKE_GENERATOR_OPTIONS.Split(" ") "-DCMAKE_INSTALL_PREFIX=$env:CMAKE_INSTALL" $env:GLOBAL_CMAKE_OPTIONS.Split(" ") ..
@@ -46,6 +50,10 @@ macos-build:
   tags:
     - ct-macos
   script:
+    - pip config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
+    - pip config set global.trusted-host artifactory.etcconnect.com
+    - pip install etcdevtool
+    - python3 tools/ci/update_artifact_version.py
     - mkdir build
     - cd build
     - cmake -DCMAKE_INSTALL_PREFIX=install ${GLOBAL_CMAKE_OPTIONS} ..
