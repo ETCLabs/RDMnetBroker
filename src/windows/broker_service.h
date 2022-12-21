@@ -64,9 +64,12 @@ private:
 
   static DWORD WINAPI ServiceThread(LPVOID* arg);
 
-  static VOID NETIOAPI_API_ InterfaceChangeCallback(IN PVOID                 CallerContext,
-                                                    IN PMIB_IPINTERFACE_ROW  Row,
-                                                    IN MIB_NOTIFICATION_TYPE NotificationType);
+  static VOID NETIOAPI_API_ IpInterfaceChangeCallback(IN PVOID                 CallerContext,
+                                                      IN PMIB_IPINTERFACE_ROW  Row,
+                                                      IN MIB_NOTIFICATION_TYPE NotificationType);
+  static VOID NETIOAPI_API_ UnicastIpAddressChangeCallback(_In_ PVOID                         CallerContext,
+                                                           _In_opt_ PMIB_UNICASTIPADDRESS_ROW Row,
+                                                           _In_ MIB_NOTIFICATION_TYPE         NotificationType);
 
   static bool   GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap);
   static HANDLE InitConfigChangeDetectionHandle();
