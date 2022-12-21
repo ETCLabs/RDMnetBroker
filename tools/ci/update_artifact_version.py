@@ -28,7 +28,7 @@ if pipeline_source == "web" and re.match("^\d+\.\d+\.\d+\.\d+$", new_version):
         print("Error: Could not load etc_project.json")
         sys.exit(1)
 
-    if not update_files(REPO_ROOT, project_json["devToolConfig"]["version"]["fileTemplates"], new_version):
+    if not update_files(REPO_ROOT, project_json.get("devToolConfig", {}).get("version", {}).get("fileTemplates"), new_version):
         print("Error: Could not update versioned input files")
         sys.exit(1)
 else:
