@@ -21,11 +21,21 @@
 #include "broker_common.h"
 #include <strsafe.h>
 #include <system_error>
+#include <locale>
+#include <codecvt>
+#include <string>
 
 // The interval to wait before restarting (in case we get blasted with tons of notifications at once)
 static constexpr uint32_t kNetworkChangeCooldownMs = 5000u;
 
 BrokerService* BrokerService::service_{nullptr};
+
+auto assert_log_fn = [](const char* msg) {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+  std::wstring wmsg = converter.from_bytes(msg);
+  BrokerService::WriteEventLogEntry(wmsg.c_str(), EVENTLOG_ERROR_TYPE);
+};
 
 // The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
 // event is passed along to the BrokerShell instance, which restarts the broker.
@@ -37,7 +47,7 @@ VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID            
   (void)Row;
   (void)NotificationType;
 
-  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return;
 
   service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
@@ -51,7 +61,7 @@ VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID     
   (void)Row;
   (void)NotificationType;
 
-  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return;
 
   service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
@@ -59,7 +69,7 @@ VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID     
 
 bool BrokerService::InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap)
 {
-  if (!BROKER_ASSERT_VERIFY(overlap, nullptr) || !BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(overlap, assert_log_fn) || !BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return false;
 
   overlap->hEvent = WSACreateEvent();
@@ -74,7 +84,7 @@ bool BrokerService::InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap
 
 void BrokerService::DeinitAddrChangeDetection(LPOVERLAPPED overlap)
 {
-  if (!BROKER_ASSERT_VERIFY(overlap, nullptr))
+  if (!BROKER_ASSERT_VERIFY(overlap, assert_log_fn))
     return;
 
   CancelIPChangeNotify(overlap);
@@ -85,7 +95,7 @@ void BrokerService::DeinitAddrChangeDetection(LPOVERLAPPED overlap)
 
 bool BrokerService::GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap)
 {
-  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return false;
 
   if ((NotifyAddrChange(handle, overlap) != NO_ERROR) && (WSAGetLastError() != WSA_IO_PENDING))
@@ -100,7 +110,7 @@ bool BrokerService::GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap)
 
 etcpal::Expected<HANDLE> BrokerService::InitConfigChangeDetectionHandle()
 {
-  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return kEtcPalErrSys;
 
   std::wstring prefix(L"\\\\?\\");  // FindFirstChangeNotification requires this for wide paths
@@ -110,7 +120,7 @@ etcpal::Expected<HANDLE> BrokerService::InitConfigChangeDetectionHandle()
 
 bool BrokerService::ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap)
 {
-  if (!BROKER_ASSERT_VERIFY(overlap, nullptr) || !BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(overlap, assert_log_fn) || !BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return false;
 
   static constexpr DWORD kWaitMs = 200u;  // Keep this short for quick shutdown
@@ -135,7 +145,7 @@ bool BrokerService::ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap)
 
 bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
 {
-  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return false;
 
   static constexpr DWORD kWaitMs = 200u;  // Keep this short for quick shutdown
@@ -175,7 +185,7 @@ bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
 
 DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 {
-  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return 1;
 
   DWORD result = 1;
@@ -231,7 +241,7 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 
 bool BrokerService::RunService(BrokerService* service)
 {
-  if (!BROKER_ASSERT_VERIFY(service, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service, assert_log_fn))
     return false;
 
   service_ = service;
@@ -246,7 +256,7 @@ bool BrokerService::RunService(BrokerService* service)
 
 void WINAPI BrokerService::ServiceMain(DWORD argc, PWSTR* argv)
 {
-  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return;
 
   // Register the handler function for the service
@@ -277,7 +287,7 @@ void WINAPI BrokerService::ServiceMain(DWORD argc, PWSTR* argv)
 //
 void WINAPI BrokerService::ServiceCtrlHandler(DWORD control_code)
 {
-  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return;
 
   switch (control_code)
@@ -295,7 +305,7 @@ void WINAPI BrokerService::ServiceCtrlHandler(DWORD control_code)
 
 BrokerService::BrokerService(const wchar_t* service_name)
 {
-  if (BROKER_ASSERT_VERIFY(service_name, nullptr))
+  if (BROKER_ASSERT_VERIFY(service_name, assert_log_fn))
     name_ = std::wstring(service_name);
 
   status_.dwServiceType = SERVICE_WIN32_OWN_PROCESS;  // The service runs in its own process.

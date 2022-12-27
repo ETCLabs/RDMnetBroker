@@ -18,15 +18,40 @@
  *****************************************************************************/
 
 #include "broker_common.h"
+#include "etcpal/cpp/log.h"
 #include <cassert>
 
-bool AssertVerifyFail(const char* exp, const char* file, const char* func, int line, etcpal::Logger* logger)
+class AssertLogHandler : public etcpal::LogMessageHandler
 {
-  if (logger)  // logger may be null
-  {
-    logger->Critical(R"(ASSERTION "%s" FAILED (FILE: "%s" FUNCTION: "%s" LINE: %d))", exp ? exp : "", file ? file : "",
-                     func ? func : "", line);
-  }
+public:
+  AssertLogHandler(const std::function<void(const char*)>& log_fn) : log_fn_(log_fn) {}
+
+  void HandleLogMessage(const EtcPalLogStrings& strings) override { log_fn(strings.raw); }
+
+private:
+  const std::function<void(const char*)>& log_fn_;
+};
+
+class AssertLogger
+{
+public:
+  AssertLogger(const std::function<void(const char*)>& log_fn) : log_handler_(log_fn) { logger_.Startup(log_handler_); }
+  ~AssertLogger() { logger_.Shutdown(); }
+
+private:
+  etcpal::Logger   logger_;
+  AssertLogHandler log_handler_;
+}
+
+bool AssertVerifyFail(const char*                             exp,
+                      const char*                             file,
+                      const char*                             func,
+                      int                                     line,
+                      const std::function<void(const char*)>& log_fn)
+{
+  AssertLogger logger(log_fn);
+  logger.Critical(R"(ASSERTION "%s" FAILED (FILE: "%s" FUNCTION: "%s" LINE: %d))", exp ? exp : "", file ? file : "",
+                  func ? func : "", line);
 
   assert(false);
   return false;

@@ -160,8 +160,13 @@ bool ValidateAndStoreString(const char*     key_ptr,
                             etcpal::Logger* log,
                             bool            truncation_allowed = true)
 {
-  if (!BROKER_ASSERT_VERIFY(key_ptr, log))
+  if (!BROKER_ASSERT_VERIFY(key_ptr, [log](const char* msg) {
+        if (log)
+          log->Critical(msg);
+      }))
+  {
     return false;
+  }
 
   const std::string str_val = val;
   if (str_val.empty())
@@ -221,8 +226,13 @@ bool ValidateAndStoreInt(
 {
   static_assert(std::is_integral<IntType>(), "This function can only be used with integral types.");
 
-  if (!BROKER_ASSERT_VERIFY(key_ptr, log))
+  if (!BROKER_ASSERT_VERIFY(key_ptr, [log](const char* msg) {
+        if (log)
+          log->Critical(msg);
+      }))
+  {
     return false;
+  }
 
   const int64_t int_val = val;
   if (int_val < limits.first || int_val > limits.second)

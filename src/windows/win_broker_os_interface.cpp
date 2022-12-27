@@ -93,7 +93,7 @@ std::string WindowsBrokerOsInterface::GetLogFilePath() const
 
 bool WindowsBrokerOsInterface::OpenLogFile()
 {
-  if (!BROKER_ASSERT_VERIFY(!log_file_, nullptr))
+  if (!BROKER_ASSERT_VERIFY(!log_file_, [](const char* msg) { std::cout << msg << "\n"; }))
     return false;
 
   if (program_data_path_.empty())

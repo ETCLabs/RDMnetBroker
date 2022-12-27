@@ -22,9 +22,13 @@
 
 #include "etcpal/cpp/log.h"
 
-bool AssertVerifyFail(const char* exp, const char* file, const char* func, int line, etcpal::Logger* logger);
+bool AssertVerifyFail(const char*                             exp,
+                      const char*                             file,
+                      const char*                             func,
+                      int                                     line,
+                      const std::function<void(const char*)>& log_fn);
 
-#define BROKER_ASSERT_VERIFY(exp, logger) \
-  ((exp) ? true : (AssertVerifyFail(#exp, __FILE__, static_cast<const char*>(__func__), __LINE__, logger) && false))
+#define BROKER_ASSERT_VERIFY(exp, log_fn) \
+  ((exp) ? true : (AssertVerifyFail(#exp, __FILE__, static_cast<const char*>(__func__), __LINE__, log_fn) && false))
 
 #endif /* BROKER_COMMON_H_ */
