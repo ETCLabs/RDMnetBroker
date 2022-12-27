@@ -37,8 +37,10 @@ VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID            
   (void)Row;
   (void)NotificationType;
 
-  if (service_)
-    service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
+  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+    return;
+
+  service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
 }
 
 VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID                         CallerContext,
@@ -49,12 +51,17 @@ VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID     
   (void)Row;
   (void)NotificationType;
 
-  if (service_)
-    service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
+  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+    return;
+
+  service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
 }
 
 bool BrokerService::InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap)
 {
+  if (!BROKER_ASSERT_VERIFY(overlap, nullptr) || !BROKER_ASSERT_VERIFY(service_, nullptr))
+    return false;
+
   overlap->hEvent = WSACreateEvent();
 
   if (overlap->hEvent != WSA_INVALID_EVENT)
@@ -67,6 +74,9 @@ bool BrokerService::InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap
 
 void BrokerService::DeinitAddrChangeDetection(LPOVERLAPPED overlap)
 {
+  if (!BROKER_ASSERT_VERIFY(overlap, nullptr))
+    return;
+
   CancelIPChangeNotify(overlap);
 
   if (overlap->hEvent != INVALID_HANDLE_VALUE)
@@ -75,6 +85,9 @@ void BrokerService::DeinitAddrChangeDetection(LPOVERLAPPED overlap)
 
 bool BrokerService::GetNextAddrChange(PHANDLE handle, LPOVERLAPPED overlap)
 {
+  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+    return false;
+
   if ((NotifyAddrChange(handle, overlap) != NO_ERROR) && (WSAGetLastError() != WSA_IO_PENDING))
   {
     service_->broker_shell_.log().Error("ERROR: Failed to set up the next address table change notification (%s).",
@@ -97,6 +110,9 @@ etcpal::Expected<HANDLE> BrokerService::InitConfigChangeDetectionHandle()
 
 bool BrokerService::ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap)
 {
+  if (!BROKER_ASSERT_VERIFY(overlap, nullptr) || !BROKER_ASSERT_VERIFY(service_, nullptr))
+    return false;
+
   static constexpr DWORD kWaitMs = 200u;  // Keep this short for quick shutdown
   DWORD                  status = WaitForSingleObject(overlap->hEvent, kWaitMs);
   switch (status)
@@ -159,56 +175,57 @@ bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
 
 DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
 {
+  if (!BROKER_ASSERT_VERIFY(service_, nullptr))
+    return 1;
+
   DWORD result = 1;
-  if (BROKER_ASSERT_VERIFY(service_, nullptr))
-  {
-    // Register with Windows for network change detection
-    HANDLE ip_interface_change_handle = INVALID_HANDLE_VALUE;
-    NotifyIpInterfaceChange(AF_UNSPEC, IpInterfaceChangeCallback, nullptr, FALSE, &ip_interface_change_handle);
-    HANDLE unicast_ip_address_change_handle = INVALID_HANDLE_VALUE;
-    NotifyUnicastIpAddressChange(AF_UNSPEC, UnicastIpAddressChangeCallback, nullptr, FALSE,
-                                 &unicast_ip_address_change_handle);
+  // Register with Windows for network change detection
+  HANDLE ip_interface_change_handle = INVALID_HANDLE_VALUE;
+  NotifyIpInterfaceChange(AF_UNSPEC, IpInterfaceChangeCallback, nullptr, FALSE, &ip_interface_change_handle);
+  HANDLE unicast_ip_address_change_handle = INVALID_HANDLE_VALUE;
+  NotifyUnicastIpAddressChange(AF_UNSPEC, UnicastIpAddressChangeCallback, nullptr, FALSE,
+                               &unicast_ip_address_change_handle);
 
-    bool           stop_addr_change_detection = false;
-    etcpal::Thread addr_change_detection_thread([&stop_addr_change_detection]() {
-      HANDLE     handle = INVALID_HANDLE_VALUE;
-      OVERLAPPED overlap;
-      if (InitAddrChangeDetection(&handle, &overlap))
-      {
-        while (!stop_addr_change_detection && ProcessAddrChanges(&handle, &overlap))
-          ;
-
-        DeinitAddrChangeDetection(&overlap);
-      }
-    });
-
-    // Also set up config change detection
-    bool           stop_config_change_detection = false;
-    etcpal::Thread config_change_detection_thread([&stop_config_change_detection]() {
-      auto change_handle = InitConfigChangeDetectionHandle();
-      while (change_handle && !stop_config_change_detection && ProcessConfigChanges(*change_handle))
-        ;
-    });
-
-    if (service_->broker_shell_.Run())
-      result = 0;
-
-    // Stop config change detection
-    stop_config_change_detection = true;
-    config_change_detection_thread.Join();
-
-    // Cancel network change detection
-    stop_addr_change_detection = true;
-    addr_change_detection_thread.Join();
-
-    CancelMibChangeNotify2(unicast_ip_address_change_handle);
-    CancelMibChangeNotify2(ip_interface_change_handle);
-
-    if (result != 0)
+  bool           stop_addr_change_detection = false;
+  etcpal::Thread addr_change_detection_thread([&stop_addr_change_detection]() {
+    HANDLE     handle = INVALID_HANDLE_VALUE;
+    OVERLAPPED overlap;
+    if (InitAddrChangeDetection(&handle, &overlap))
     {
-      service_->SetServiceStatus(SERVICE_STOPPED, ERROR_SERVICE_SPECIFIC_ERROR, result);
+      while (!stop_addr_change_detection && ProcessAddrChanges(&handle, &overlap))
+        ;
+
+      DeinitAddrChangeDetection(&overlap);
     }
+  });
+
+  // Also set up config change detection
+  bool           stop_config_change_detection = false;
+  etcpal::Thread config_change_detection_thread([&stop_config_change_detection]() {
+    auto change_handle = InitConfigChangeDetectionHandle();
+    while (change_handle && !stop_config_change_detection && ProcessConfigChanges(*change_handle))
+      ;
+  });
+
+  if (service_->broker_shell_.Run())
+    result = 0;
+
+  // Stop config change detection
+  stop_config_change_detection = true;
+  config_change_detection_thread.Join();
+
+  // Cancel network change detection
+  stop_addr_change_detection = true;
+  addr_change_detection_thread.Join();
+
+  CancelMibChangeNotify2(unicast_ip_address_change_handle);
+  CancelMibChangeNotify2(ip_interface_change_handle);
+
+  if (result != 0)
+  {
+    service_->SetServiceStatus(SERVICE_STOPPED, ERROR_SERVICE_SPECIFIC_ERROR, result);
   }
+
   return result;
 }
 
