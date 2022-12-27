@@ -26,7 +26,7 @@ class AssertLogHandler : public etcpal::LogMessageHandler
 public:
   AssertLogHandler(const std::function<void(const char*)>& log_fn) : log_fn_(log_fn) {}
 
-  void HandleLogMessage(const EtcPalLogStrings& strings) override { log_fn(strings.raw); }
+  void HandleLogMessage(const EtcPalLogStrings& strings) override { log_fn_(strings.raw); }
 
 private:
   const std::function<void(const char*)>& log_fn_;
