@@ -19,23 +19,16 @@
 
 #include "broker_service.h"
 #include "broker_common.h"
+#include <iostream>
 #include <strsafe.h>
 #include <system_error>
-#include <locale>
-#include <codecvt>
-#include <string>
 
 // The interval to wait before restarting (in case we get blasted with tons of notifications at once)
 static constexpr uint32_t kNetworkChangeCooldownMs = 5000u;
 
 BrokerService* BrokerService::service_{nullptr};
 
-auto assert_log_fn = [](const char* msg) {
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-
-  std::wstring wmsg = converter.from_bytes(msg);
-  BrokerService::WriteEventLogEntry(wmsg.c_str(), EVENTLOG_ERROR_TYPE);
-};
+auto assert_log_fn = [](const char* msg) { std::cout << msg << "\n"; };
 
 // The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
 // event is passed along to the BrokerShell instance, which restarts the broker.

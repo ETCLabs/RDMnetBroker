@@ -32,16 +32,15 @@ private:
   const std::function<void(const char*)>& log_fn_;
 };
 
-class AssertLogger
+class AssertLogger : public etcpal::Logger
 {
 public:
-  AssertLogger(const std::function<void(const char*)>& log_fn) : log_handler_(log_fn) { logger_.Startup(log_handler_); }
-  ~AssertLogger() { logger_.Shutdown(); }
+  AssertLogger(const std::function<void(const char*)>& log_fn) : log_handler_(log_fn) { Startup(log_handler_); }
+  ~AssertLogger() { Shutdown(); }
 
 private:
-  etcpal::Logger   logger_;
   AssertLogHandler log_handler_;
-}
+};
 
 bool AssertVerifyFail(const char*                             exp,
                       const char*                             file,
