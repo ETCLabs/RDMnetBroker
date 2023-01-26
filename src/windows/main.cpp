@@ -26,6 +26,7 @@
 #include <windows.h>
 #include "service_config.h"
 #include "service_utils.h"
+#include "broker_common.h"
 #include "broker_service.h"
 #include "broker_version.h"
 
@@ -36,7 +37,7 @@ void PrintVersion()
 
 void PrintUsage(const wchar_t* app_name)
 {
-  std::wprintf(L"Usage: %s [OPTIONAL_ACTION]\n", app_name);
+  std::wprintf(L"Usage: %s [OPTIONAL_ACTION]\n", app_name ? app_name : L"");
   std::wprintf(L"Note: Only the Windows Service Control Manager should invoke this executable with no options.\n");
   std::wprintf(L"\n");
   std::wprintf(L"Optional actions (only one may be specified at a time):\n");

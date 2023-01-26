@@ -1,5 +1,7 @@
 
 add_library(RDMnetBrokerServiceCore
+  broker_common.h
+  broker_common.cpp
   broker_config.h
   broker_config.cpp
   broker_shell.h

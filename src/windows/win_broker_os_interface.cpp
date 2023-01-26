@@ -21,11 +21,11 @@
 
 #include <iostream>
 #include <memory>
-#include <cassert>
 #include <Windows.h>
 #include <ShlObj.h>
 #include <datetimeapi.h>
 #include "service_utils.h"
+#include "broker_common.h"
 #include "broker_version.h"
 
 constexpr const WCHAR                  kRelativeConfDirName[] = L"\\ETC\\RDMnetBroker\\Config";
@@ -41,10 +41,13 @@ std::string ConvertWstringToUtf8(const std::wstring& str)
   if (size_needed > 0)
   {
     auto buf = std::make_unique<char[]>(size_needed);
-    int  convert_res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, buf.get(), size_needed, NULL, NULL);
-    if (convert_res > 0)
+    if (buf)
     {
-      return buf.get();
+      int convert_res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, buf.get(), size_needed, NULL, NULL);
+      if (convert_res > 0)
+      {
+        return buf.get();
+      }
     }
   }
   return std::string{};
@@ -90,7 +93,8 @@ std::string WindowsBrokerOsInterface::GetLogFilePath() const
 
 bool WindowsBrokerOsInterface::OpenLogFile()
 {
-  assert(!log_file_);
+  if (!BROKER_ASSERT_VERIFY(!log_file_, [](const char* msg) { std::cout << msg << "\n"; }))
+    return false;
 
   if (program_data_path_.empty())
   {
