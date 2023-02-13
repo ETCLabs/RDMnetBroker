@@ -110,7 +110,7 @@ What follows is an overview of the currently supported properties and how to set
 This is a boolean property that determines whether the service's broker functionality should be active or not. For example, to disable broker functionality:
 
 ```json
-  "enable_broker": false,
+  "enable_broker": false
 ```
 
 When broker functionality is disabled, the service remains running and continues monitoring the configuration file for further changes. However, the service will not actually run a broker until configured to do so.
@@ -120,7 +120,7 @@ When broker functionality is disabled, the service remains running and continues
 This is a string property that should be set to the desired CID for the broker. Enter the CID as a UUID without curly braces, for example:
 
 ```json
-  "cid": "4958ac8f-cd5e-42cd-ab7e-9797b0efd3ac",
+  "cid": "4958ac8f-cd5e-42cd-ab7e-9797b0efd3ac"
 ```
 
 ### UID
@@ -133,7 +133,7 @@ Here’s an example of how to specify a dynamic broker UID:
   "uid": {
     "type": "dynamic",
     "manufacturer_id": 25972
-  },
+  }
 ```
 
 Here’s an example of how to specify a static broker UID:
@@ -155,7 +155,7 @@ Various DNS-SD settings can be configured. The service instance name, manufactur
     "service_instance_name": "My ETC RDMnet Broker",
     "manufacturer": "ETC",
     "model": "RDMnet Broker",
-  },
+  }
 ```
 
 ### Scope
@@ -163,7 +163,7 @@ Various DNS-SD settings can be configured. The service instance name, manufactur
 The scope of the broker can be configured as a string property:
 
 ```json
-  "scope": "default",
+  "scope": "default"
 ```
 
 ### Listen Port
@@ -171,7 +171,7 @@ The scope of the broker can be configured as a string property:
 The port the broker will use for connections can be configured as a number:
 
 ```json
-  "listen_port": 8888,
+  "listen_port": 8888
 ```
 
 ### Listen Interfaces
@@ -182,7 +182,7 @@ The broker can be configured to use specific network interfaces. If nothing is s
   "listen_interfaces": [
     "eth0",
     "wlan0"
-  ],
+  ]
 ```
 
 On Mac, the names of the interfaces are used - to find the names of the interfaces, use a command prompt and `/sbin/ifconfig`.
@@ -193,7 +193,7 @@ On Windows, GUIDs are used instead:
   "listen_interfaces": [
     "{D1DB0425-03FB-81BB-8120-0787286B3EA6}",
     "{B33CDECD-229B-467A-BC63-54F2073A31CE}"
-  ],
+  ]
 ```
 
 To find the GUIDs, navigate to this registry location in RegEdit: `Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkCards`.
@@ -205,7 +205,7 @@ Each folder is named with a number, and each individually represents a network i
 The log level can be set as a string. All log messages at this level or above will be logged. Example:
 
 ```json
-  "log_level": "info",
+  "log_level": "info"
 ```
 
 The allowed strings for this property are `debug`, `info`, `notice`, `warning`, `err`, `crit`, `alert`, and `emerg`.
@@ -219,7 +219,7 @@ Various configuration properties are available for setting various limits.
 The maximum number of client connections supported. 0 means infinite:
 
 ```json
-  "max_connections": 20000,
+  "max_connections": 20000
 ```
 
 #### Max Controllers
@@ -227,7 +227,7 @@ The maximum number of client connections supported. 0 means infinite:
 The maximum number of controllers allowed. 0 means infinite:
 
 ```json
-  "max_controllers": 1000,
+  "max_controllers": 1000
 ```
 
 #### Max Controller Messages
@@ -235,7 +235,7 @@ The maximum number of controllers allowed. 0 means infinite:
 The maximum number of queued messages per controller. 0 means infinite:
 
 ```json
-  "max_controller_messages": 500,
+  "max_controller_messages": 500
 ```
 
 #### Max Devices
@@ -243,7 +243,7 @@ The maximum number of queued messages per controller. 0 means infinite:
 The maximum number of devices allowed. 0 means infinite:
 
 ```json
-  "max_devices": 20000,
+  "max_devices": 20000
 ```
 
 #### Max Device Messages
@@ -251,7 +251,7 @@ The maximum number of devices allowed. 0 means infinite:
 The maximum number of queued messages per device. 0 means infinite:
 
 ```json
-  "max_device_messages": 500,
+  "max_device_messages": 500
 ```
 
 #### Max Reject Connections
