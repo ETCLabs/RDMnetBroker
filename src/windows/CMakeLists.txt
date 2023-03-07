@@ -58,6 +58,13 @@ target_include_directories(RDMnetBrokerService PRIVATE GeneratedFiles)
 target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore)
 target_compile_definitions(RDMnetBrokerService PRIVATE UNICODE _UNICODE)
 
+# Custom Visual Studio compile and link options for Release builds
+
+# Default optimizations, disable assert, generate PDB, enable function-level linking
+target_compile_options(RDMnetBrokerService PUBLIC "$<$<CONFIG:Release>:/O2;/DNDEBUG;/Zi;/Gy>")
+# Generate PDB, disable incremental linking, remove unreferenced sections, merge identical sections
+target_link_options(RDMnetBrokerService PUBLIC "$<$<CONFIG:Release>:/DEBUG;/INCREMENTAL:NO;/OPT:REF;/OPT:ICF>")
+
 install(TARGETS RDMnetBrokerService
   RUNTIME DESTINATION bin
 )
