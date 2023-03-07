@@ -60,13 +60,6 @@ target_include_directories(RDMnetBrokerService PRIVATE GeneratedFiles)
 target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore)
 target_compile_definitions(RDMnetBrokerService PRIVATE UNICODE _UNICODE)
 
-# Custom Visual Studio compile and link options for Release builds
-
-# Default optimizations, disable assert, generate PDB, enable function-level linking
-target_compile_options(RDMnetBrokerService PUBLIC "$<$<CONFIG:Release>:/O2;/DNDEBUG;/Zi;/Gy>")
-# Generate PDB, disable incremental linking, remove unreferenced sections, merge identical sections
-target_link_options(RDMnetBrokerService PUBLIC "$<$<CONFIG:Release>:/DEBUG;/INCREMENTAL:NO;/OPT:REF;/OPT:ICF>")
-
 install(TARGETS RDMnetBrokerService
   RUNTIME DESTINATION bin
 )
@@ -74,4 +67,7 @@ install(TARGETS RDMnetBrokerService
 get_target_property(BROKER_SERVICE_PDB_OUTPUT_DIRECTORY RDMnetBrokerService COMPILE_PDB_OUTPUT_DIRECTORY)
 get_target_property(BROKER_SERVICE_PDB_NAME RDMnetBrokerService COMPILE_PDB_NAME)
 
-install(FILES "${BROKER_SERVICE_PDB_OUTPUT_DIRECTORY}/Release/${BROKER_SERVICE_PDB_NAME}.pdb" DESTINATION bin/symbols CONFIGURATIONS Release OPTIONAL)
+install(FILES "${BROKER_SERVICE_PDB_OUTPUT_DIRECTORY}/Debug/${BROKER_SERVICE_PDB_NAME}.pdb" DESTINATION symbols CONFIGURATIONS Debug OPTIONAL)
+install(FILES "${BROKER_SERVICE_PDB_OUTPUT_DIRECTORY}/Release/${BROKER_SERVICE_PDB_NAME}.pdb" DESTINATION symbols CONFIGURATIONS Release OPTIONAL)
+install(FILES "${BROKER_SERVICE_PDB_OUTPUT_DIRECTORY}/MinSizeRel/${BROKER_SERVICE_PDB_NAME}.pdb" DESTINATION symbols CONFIGURATIONS MinSizeRel OPTIONAL)
+install(FILES "${BROKER_SERVICE_PDB_OUTPUT_DIRECTORY}/RelWithDebInfo/${BROKER_SERVICE_PDB_NAME}.pdb" DESTINATION symbols CONFIGURATIONS RelWithDebInfo OPTIONAL)
