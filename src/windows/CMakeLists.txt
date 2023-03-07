@@ -54,6 +54,8 @@ add_executable(RDMnetBrokerService
   main.cpp
 )
 set_target_properties(RDMnetBrokerService PROPERTIES CXX_STANDARD 17)
+set_target_properties(RDMnetBrokerService PROPERTIES COMPILE_PDB_NAME "RDMnetBrokerService")
+set_target_properties(RDMnetBrokerService PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(RDMnetBrokerService PRIVATE GeneratedFiles)
 target_link_libraries(RDMnetBrokerService PRIVATE RDMnetBrokerServiceCore)
 target_compile_definitions(RDMnetBrokerService PRIVATE UNICODE _UNICODE)
