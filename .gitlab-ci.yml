@@ -39,6 +39,7 @@ windows-build:
     paths:
       - RDMnetBroker_$ARTIFACT_TYPE.msi
       - RDMnetBroker_$ARTIFACT_TYPE.msm
+      - $CMAKE_INSTALL/bin/symbols/RDMnetBrokerService.pdb
     reports:
       junit: build/tests/test-results/*.xml
 
