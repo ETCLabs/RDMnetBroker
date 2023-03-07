@@ -33,22 +33,23 @@ windows-build:
     - ctest -C Release --output-on-failure
     - cmake -DBUILD_TYPE=RelWithDebInfo -P cmake_install.cmake
     - cd ..
-    - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerService.pdb .\RDMnetBrokerService.pdb
-    - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerServiceCore.pdb .\RDMnetBrokerServiceCore.pdb
-    - cp .\build\$env:CMAKE_INSTALL\lib\RDMnet.pdb .\RDMnet.pdb
-    - cp .\build\$env:CMAKE_INSTALL\lib\RDMnetBroker.pdb .\RDMnetBroker.pdb
-    - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\EtcPal.pdb
+    - mkdir symbols
+    - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerService.pdb .\symbols\RDMnetBrokerService.pdb
+    - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerServiceCore.pdb .\symbols\RDMnetBrokerServiceCore.pdb
+    - cp .\build\$env:CMAKE_INSTALL\lib\RDMnet.pdb .\symbols\RDMnet.pdb
+    - cp .\build\$env:CMAKE_INSTALL\lib\RDMnetBroker.pdb .\symbols\RDMnetBroker.pdb
+    - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\symbols\EtcPal.pdb
     - .\tools\ci\windows_build_artifacts.bat
   artifacts:
     when: always
     paths:
       - RDMnetBroker_$ARTIFACT_TYPE.msi
       - RDMnetBroker_$ARTIFACT_TYPE.msm
-      - build/$CMAKE_INSTALL/symbols/RDMnetBrokerService.pdb
-      - build/$CMAKE_INSTALL/symbols/RDMnetBrokerServiceCore.pdb
-      - build/$CMAKE_INSTALL/lib/RDMnet.pdb
-      - build/$CMAKE_INSTALL/lib/RDMnetBroker.pdb
-      - build/$CMAKE_INSTALL/lib/EtcPal.pdb
+      - symbols/RDMnetBrokerService.pdb
+      - symbols/RDMnetBrokerServiceCore.pdb
+      - symbols/RDMnet.pdb
+      - symbols/RDMnetBroker.pdb
+      - symbols/EtcPal.pdb
     reports:
       junit: build/tests/test-results/*.xml
 
