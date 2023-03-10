@@ -31,12 +31,8 @@ BrokerService* BrokerService::service_{nullptr};
 
 auto assert_log_fn = [](const char* msg) { std::cout << msg << "\n"; };
 
-std::string GetIpChangeInterfaceAddrString(PMIB_IPINTERFACE_ROW row)
+std::string GetInterfaceAddrString(NET_IFINDEX index)
 {
-  if (!row)
-    return "None";
-
-  NET_IFINDEX              index = row->InterfaceIndex;
   std::set<etcpal::IpAddr> ips;
 
   size_t                        num_netints = 0u;  // Actual size eventually filled in
@@ -98,7 +94,8 @@ VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID            
 
   service_->broker_shell_.log().Info(
       "IP interface change occurred (interfaces: %s, type: %s) - requesting broker restart.",
-      GetIpChangeInterfaceAddrString(Row).c_str(), IpChangeNotificationTypeToString(NotificationType).c_str());
+      Row ? GetInterfaceAddrString(Row->InterfaceIndex).c_str() : "None",
+      IpChangeNotificationTypeToString(NotificationType).c_str());
   service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
 }
 
@@ -114,7 +111,8 @@ VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID     
 
   service_->broker_shell_.log().Info(
       "Unicast IP address change occurred (interfaces: %s, type: %s) - requesting broker restart.",
-      GetIpChangeInterfaceAddrString(Row).c_str(), IpChangeNotificationTypeToString(NotificationType).c_str());
+      Row ? GetInterfaceAddrString(Row->InterfaceIndex).c_str() : "None",
+      IpChangeNotificationTypeToString(NotificationType).c_str());
   service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
 }
 
