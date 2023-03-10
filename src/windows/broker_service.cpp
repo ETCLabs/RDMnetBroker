@@ -45,7 +45,7 @@ std::string GetInterfaceAddrString(NET_IFINDEX index)
   for (const auto& netint : netint_list)
   {
     if (index == netint.index)
-      ips.insert(netint.addr).second;
+      ips.insert(netint.addr);
   }
 
   std::stringstream res;
