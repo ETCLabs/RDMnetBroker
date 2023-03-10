@@ -38,7 +38,7 @@ struct BrokerVersion
   static constexpr int kVersionMajor = 1;
   static constexpr int kVersionMinor = 0;
   static constexpr int kVersionPatch = 0;
-  static constexpr int kVersionBuild = 3;
+  static constexpr int kVersionBuild = 99;
 
   static std::string VersionString();
   static std::string ProductNameString();
