@@ -92,6 +92,10 @@ VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID            
   if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return;
 
+  // Make sure we can get the new IP for logging
+  if (NotificationType == MibAddInstance)
+    etcpal_netint_refresh_interfaces();
+
   service_->broker_shell_.log().Info(
       "IP interface change occurred (interfaces: %s, type: %s) - requesting broker restart.",
       Row ? GetInterfaceAddrString(Row->InterfaceIndex).c_str() : "None",
@@ -108,6 +112,10 @@ VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID     
 
   if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return;
+
+  // Make sure we can get the new IP for logging
+  if (NotificationType == MibAddInstance)
+    etcpal_netint_refresh_interfaces();
 
   service_->broker_shell_.log().Info(
       "Unicast IP address change occurred (interfaces: %s, type: %s) - requesting broker restart.",
