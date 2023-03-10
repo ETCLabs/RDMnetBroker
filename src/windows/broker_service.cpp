@@ -22,6 +22,7 @@
 #include <iostream>
 #include <strsafe.h>
 #include <system_error>
+#include <sstream>
 
 // The interval to wait before restarting (in case we get blasted with tons of notifications at once)
 static constexpr uint32_t kNetworkChangeCooldownMs = 5000u;
@@ -30,6 +31,59 @@ BrokerService* BrokerService::service_{nullptr};
 
 auto assert_log_fn = [](const char* msg) { std::cout << msg << "\n"; };
 
+std::string GetIpChangeInterfaceAddrString(PMIB_IPINTERFACE_ROW row)
+{
+  if (!row)
+    return "None";
+
+  NET_IFINDEX              index = row->InterfaceIndex;
+  std::set<etcpal::IpAddr> ips;
+
+  size_t                        num_netints = 0u;  // Actual size eventually filled in
+  std::vector<EtcPalNetintInfo> netint_list(num_netints);
+  while (etcpal_netint_get_interfaces(netint_list.data(), &num_netints) == kEtcPalErrBufSize)
+    netint_list.resize(num_netints);
+
+  netint_list.resize(num_netints);  // Final size
+
+  for (const auto& netint : netint_list)
+  {
+    if (index == netint.index)
+      ips.insert(netint.addr).second;
+  }
+
+  std::stringstream res;
+  bool              first = true;
+  for (const auto& ip : ips)
+  {
+    if (first)
+      first = false;
+    else
+      res << ", ";
+
+    res << ip.ToString();
+  }
+
+  return res.str();
+}
+
+std::string IpChangeNotificationTypeToString(MIB_NOTIFICATION_TYPE notification_type)
+{
+  switch (notification_type)
+  {
+    case MibParameterNotification:
+      return "Parameter Change";
+    case MibAddInstance:
+      return "Addition";
+    case MibDeleteInstance:
+      return "Deletion";
+    case MibInitialNotification:
+      return "Initial Notification";
+  }
+
+  return "Unknown";
+}
+
 // The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
 // event is passed along to the BrokerShell instance, which restarts the broker.
 VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID                 CallerContext,
@@ -37,12 +91,14 @@ VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID            
                                                             IN MIB_NOTIFICATION_TYPE NotificationType)
 {
   (void)CallerContext;
-  (void)Row;
   (void)NotificationType;
 
   if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return;
 
+  service_->broker_shell_.log().Info(
+      "IP interface change occurred (interfaces: %s, type: %s) - requesting broker restart.",
+      GetIpChangeInterfaceAddrString(Row).c_str(), IpChangeNotificationTypeToString(NotificationType).c_str());
   service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
 }
 
@@ -51,12 +107,14 @@ VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID     
                                                                  _In_ MIB_NOTIFICATION_TYPE         NotificationType)
 {
   (void)CallerContext;
-  (void)Row;
   (void)NotificationType;
 
   if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
     return;
 
+  service_->broker_shell_.log().Info(
+      "Unicast IP address change occurred (interfaces: %s, type: %s) - requesting broker restart.",
+      GetIpChangeInterfaceAddrString(Row).c_str(), IpChangeNotificationTypeToString(NotificationType).c_str());
   service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
 }
 
@@ -121,6 +179,7 @@ bool BrokerService::ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap)
   switch (status)
   {
     case WAIT_OBJECT_0:  // The address table has changed
+      service_->broker_shell_.log().Info("The address table has changed - requesting broker restart.");
       service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
       ResetEvent(overlap->hEvent);
       return GetNextAddrChange(handle, overlap);
@@ -154,6 +213,7 @@ bool BrokerService::ProcessConfigChanges(HANDLE change_handle)
     switch (status)
     {
       case WAIT_OBJECT_0:  // The config has changed
+        service_->broker_shell_.log().Info("The broker configuration file has changed - requesting broker restart.");
         service_->broker_shell_.RequestRestart();
         if (!FindNextChangeNotification(change_handle))
         {
