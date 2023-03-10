@@ -97,7 +97,7 @@ VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID            
     etcpal_netint_refresh_interfaces();
 
   service_->broker_shell_.log().Info(
-      "IP interface change occurred (interfaces: %s, type: %s) - requesting broker restart.",
+      "IP interface change occurred (interface(s): %s, type: %s) - requesting broker restart.",
       Row ? GetInterfaceAddrString(Row->InterfaceIndex).c_str() : "None",
       IpChangeNotificationTypeToString(NotificationType).c_str());
   service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
@@ -118,7 +118,7 @@ VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID     
     etcpal_netint_refresh_interfaces();
 
   service_->broker_shell_.log().Info(
-      "Unicast IP address change occurred (interfaces: %s, type: %s) - requesting broker restart.",
+      "Unicast IP address change occurred (interface(s): %s, type: %s) - requesting broker restart.",
       Row ? GetInterfaceAddrString(Row->InterfaceIndex).c_str() : "None",
       IpChangeNotificationTypeToString(NotificationType).c_str());
   service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
