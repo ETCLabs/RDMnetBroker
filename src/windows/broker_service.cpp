@@ -22,7 +22,6 @@
 #include <iostream>
 #include <strsafe.h>
 #include <system_error>
-#include <sstream>
 
 // The interval to wait before restarting (in case we get blasted with tons of notifications at once)
 static constexpr uint32_t kNetworkChangeCooldownMs = 5000u;
