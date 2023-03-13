@@ -80,50 +80,6 @@ std::string IpChangeNotificationTypeToString(MIB_NOTIFICATION_TYPE notification_
   return "Unknown";
 }
 
-// The system will deliver this callback when an IPv4 or IPv6 network adapter changes state. This
-// event is passed along to the BrokerShell instance, which restarts the broker.
-VOID NETIOAPI_API_ BrokerService::IpInterfaceChangeCallback(IN PVOID                 CallerContext,
-                                                            IN PMIB_IPINTERFACE_ROW  Row,
-                                                            IN MIB_NOTIFICATION_TYPE NotificationType)
-{
-  (void)CallerContext;
-  (void)NotificationType;
-
-  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
-    return;
-
-  // Make sure we can get the new IP for logging
-  if (NotificationType == MibAddInstance)
-    etcpal_netint_refresh_interfaces();
-
-  service_->broker_shell_.log().Info(
-      "IP interface change occurred (interface(s): %s, type: %s) - requesting broker restart.",
-      Row ? GetInterfaceAddrString(Row->InterfaceIndex).c_str() : "None",
-      IpChangeNotificationTypeToString(NotificationType).c_str());
-  service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
-}
-
-VOID NETIOAPI_API_ BrokerService::UnicastIpAddressChangeCallback(_In_ PVOID                         CallerContext,
-                                                                 _In_opt_ PMIB_UNICASTIPADDRESS_ROW Row,
-                                                                 _In_ MIB_NOTIFICATION_TYPE         NotificationType)
-{
-  (void)CallerContext;
-  (void)NotificationType;
-
-  if (!BROKER_ASSERT_VERIFY(service_, assert_log_fn))
-    return;
-
-  // Make sure we can get the new IP for logging
-  if (NotificationType == MibAddInstance)
-    etcpal_netint_refresh_interfaces();
-
-  service_->broker_shell_.log().Info(
-      "Unicast IP address change occurred (interface(s): %s, type: %s) - requesting broker restart.",
-      Row ? GetInterfaceAddrString(Row->InterfaceIndex).c_str() : "None",
-      IpChangeNotificationTypeToString(NotificationType).c_str());
-  service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
-}
-
 bool BrokerService::InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap)
 {
   if (!BROKER_ASSERT_VERIFY(overlap, assert_log_fn) || !BROKER_ASSERT_VERIFY(service_, assert_log_fn))
@@ -248,13 +204,8 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
     return 1;
 
   DWORD result = 1;
-  // Register with Windows for network change detection
-  HANDLE ip_interface_change_handle = INVALID_HANDLE_VALUE;
-  NotifyIpInterfaceChange(AF_UNSPEC, IpInterfaceChangeCallback, nullptr, FALSE, &ip_interface_change_handle);
-  HANDLE unicast_ip_address_change_handle = INVALID_HANDLE_VALUE;
-  NotifyUnicastIpAddressChange(AF_UNSPEC, UnicastIpAddressChangeCallback, nullptr, FALSE,
-                               &unicast_ip_address_change_handle);
 
+  // Set up network change detection
   bool           stop_addr_change_detection = false;
   etcpal::Thread addr_change_detection_thread([&stop_addr_change_detection]() {
     HANDLE     handle = INVALID_HANDLE_VALUE;
@@ -286,9 +237,6 @@ DWORD WINAPI BrokerService::ServiceThread(LPVOID* /*arg*/)
   // Cancel network change detection
   stop_addr_change_detection = true;
   addr_change_detection_thread.Join();
-
-  CancelMibChangeNotify2(unicast_ip_address_change_handle);
-  CancelMibChangeNotify2(ip_interface_change_handle);
 
   if (result != 0)
   {
