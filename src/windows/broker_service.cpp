@@ -91,7 +91,7 @@ bool BrokerService::ProcessAddrChanges(PHANDLE handle, LPOVERLAPPED overlap)
   switch (status)
   {
     case WAIT_OBJECT_0:  // The address table has changed
-      service_->broker_shell_.log().Info("The address table has changed - requesting broker restart.");
+      service_->broker_shell_.log().Info("A network change was detected - requesting broker restart.");
       service_->broker_shell_.RequestRestart(kNetworkChangeCooldownMs);
       ResetEvent(overlap->hEvent);
       return GetNextAddrChange(handle, overlap);
