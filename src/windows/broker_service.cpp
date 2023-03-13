@@ -31,23 +31,6 @@ BrokerService* BrokerService::service_{nullptr};
 
 auto assert_log_fn = [](const char* msg) { std::cout << msg << "\n"; };
 
-std::string IpChangeNotificationTypeToString(MIB_NOTIFICATION_TYPE notification_type)
-{
-  switch (notification_type)
-  {
-    case MibParameterNotification:
-      return "Parameter Change";
-    case MibAddInstance:
-      return "Addition";
-    case MibDeleteInstance:
-      return "Deletion";
-    case MibInitialNotification:
-      return "Initial Notification";
-  }
-
-  return "Unknown";
-}
-
 bool BrokerService::InitAddrChangeDetection(PHANDLE handle, LPOVERLAPPED overlap)
 {
   if (!BROKER_ASSERT_VERIFY(overlap, assert_log_fn) || !BROKER_ASSERT_VERIFY(service_, assert_log_fn))
