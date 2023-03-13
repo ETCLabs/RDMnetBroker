@@ -33,7 +33,10 @@ static void InterfaceChangeCallback(CFNotificationCenterRef center,
 {
   BrokerService* service = reinterpret_cast<BrokerService*>(observer);
   if (service)
+  {
+    service->log().Info("A network change was detected - requesting broker restart.");
     service->RequestRestart(kNetworkChangeCooldownMs);
+  }
 }
 
 bool BrokerService::Run()

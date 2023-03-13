@@ -37,6 +37,8 @@ public:
 
   void RequestRestart(uint32_t cooldown_ms = 0u) { broker_shell_.RequestRestart(cooldown_ms); }
 
+  etcpal::Logger& log() { return broker_shell_.log(); }
+
 private:
   MacBrokerOsInterface os_interface_;
   BrokerShell          broker_shell_{os_interface_};
