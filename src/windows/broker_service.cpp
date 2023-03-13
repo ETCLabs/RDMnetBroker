@@ -31,38 +31,6 @@ BrokerService* BrokerService::service_{nullptr};
 
 auto assert_log_fn = [](const char* msg) { std::cout << msg << "\n"; };
 
-std::string GetInterfaceAddrString(NET_IFINDEX index)
-{
-  std::set<etcpal::IpAddr> ips;
-
-  size_t                        num_netints = 0u;  // Actual size eventually filled in
-  std::vector<EtcPalNetintInfo> netint_list(num_netints);
-  while (etcpal_netint_get_interfaces(netint_list.data(), &num_netints) == kEtcPalErrBufSize)
-    netint_list.resize(num_netints);
-
-  netint_list.resize(num_netints);  // Final size
-
-  for (const auto& netint : netint_list)
-  {
-    if (index == netint.index)
-      ips.insert(netint.addr);
-  }
-
-  std::stringstream res;
-  bool              first = true;
-  for (const auto& ip : ips)
-  {
-    if (first)
-      first = false;
-    else
-      res << ", ";
-
-    res << ip.ToString();
-  }
-
-  return res.str();
-}
-
 std::string IpChangeNotificationTypeToString(MIB_NOTIFICATION_TYPE notification_type)
 {
   switch (notification_type)
