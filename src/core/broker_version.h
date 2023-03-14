@@ -38,7 +38,7 @@ struct BrokerVersion
   static constexpr int kVersionMajor = 1;
   static constexpr int kVersionMinor = 0;
   static constexpr int kVersionPatch = 0;
-  static constexpr int kVersionBuild = 3;
+  static constexpr int kVersionBuild = 4;
 
   static std::string VersionString();
   static std::string ProductNameString();
@@ -60,7 +60,7 @@ inline std::string BrokerVersion::ProductNameString()
 
 inline std::string BrokerVersion::BuildDateString()
 {
-  return "08.Mar.2023";
+  return "14.Mar.2023";
 }
 
 inline std::string BrokerVersion::CopyrightString()
