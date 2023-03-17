@@ -41,8 +41,8 @@ windows-build:
     - cp .\build\$env:CMAKE_INSTALL\lib\RDMnet.pdb .\symbols\RDMnet.pdb
     - cp .\build\$env:CMAKE_INSTALL\lib\RDMnetBroker.pdb .\symbols\RDMnetBroker.pdb
     - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\symbols\EtcPal.pdb
-    - .\tools\ci\windows_build_artifacts.bat
     - .\tools\ci\index_and_publish_symbols.bat
+    - .\tools\ci\windows_build_artifacts.bat
 
   artifacts:
     when: always
