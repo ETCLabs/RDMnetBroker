@@ -49,7 +49,6 @@ windows-build:
       -a $env:COMPILER_ARCH
       -u https://artifactory.etcconnect.com:443
       -r NET
-      --user $env:RDMNETBRKR_ARTIFACTORY_API_USER
       -k $env:RDMNETBRKR_ARTIFACTORY_API_KEY
       --os windows
       -d .\symbols
