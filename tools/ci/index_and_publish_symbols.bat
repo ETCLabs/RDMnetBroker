@@ -4,14 +4,15 @@ call git log -1 --pretty=%%%%H >>sethash.bat
 call sethash.bat
 del sethash.bat
 
+:: Copy srcsrv into temp to ensure script cannot break it
+mkdir %TEMP%\srcsrv
+robocopy "%ProgramFiles(x86)%\Windows Kits\10\Debuggers\x64\srcsrv" "%TEMP%\srcsrv" /np /mir
+
 @rem execute github source indexing powershell script
 @rem Need to assemble a URL like this:
 @rem https://raw.githubusercontent.com/ETCLabs/RDMnetBroker/60a3a468842b119603717852b7b76bbc28ecc8e7/.clang-format
 
-powershell C:\tools\ci\github-sourceindexer.ps1 ^
-  -dbgToolsPath "%ProgramFiles(x86)%\Windows Kits\10\Debuggers\x64\srcsrv" ^
-  -gitHubUrl https://raw.githubusercontent.com ^
-  -serverIsRaw ^
+powershell C:\tools\ci\github-sourceindexer.ps1 -dbgToolsPath "%TEMP%\srcsrv" -gitHubUrl https://raw.githubusercontent.com -serverIsRaw ^
   -userId "ETCLabs" ^
   -repository "RDMnetBroker" ^
   -branch %PROJECT_HASH% ^
