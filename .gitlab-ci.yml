@@ -42,17 +42,7 @@ windows-build:
     - cp .\build\$env:CMAKE_INSTALL\lib\RDMnetBroker.pdb .\symbols\RDMnetBroker.pdb
     - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\symbols\EtcPal.pdb
     - .\tools\ci\windows_build_artifacts.bat
-    - >
-      python C:\tools\ci\Symbols\publish_symbols.py
-      -n "RDMnetBrokerService"
-      -v $env:NEW_BUILD_VERSION
-      -a $env:COMPILER_ARCH
-      -u https://artifactory.etcconnect.com:443
-      -r NET
-      -k $env:RDMNETBRKR_ARTIFACTORY_API_KEY
-      --os windows
-      -d .\symbols
-      .\build\$env:CMAKE_INSTALL\bin\RDMnetBrokerService.exe
+    - .\tools\ci\index_and_publish_symbols.bat
 
   artifacts:
     when: always
