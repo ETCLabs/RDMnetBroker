@@ -49,6 +49,11 @@ windows-build:
     paths:
       - RDMnetBroker_$ARTIFACT_TYPE.msi
       - RDMnetBroker_$ARTIFACT_TYPE.msm
+      - symbols/RDMnetBrokerService.pdb
+      - symbols/RDMnetBrokerServiceCore.pdb
+      - symbols/RDMnet.pdb
+      - symbols/RDMnetBroker.pdb
+      - symbols/EtcPal.pdb
     reports:
       junit: build/tests/test-results/*.xml
 
