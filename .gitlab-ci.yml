@@ -43,7 +43,7 @@ windows-build:
     - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\symbols\EtcPal.pdb
     - .\tools\ci\windows_build_artifacts.bat
     - >
-      python C:\tools\ci\publish_symbols.py
+      python C:\tools\ci\Symbols\publish_symbols.py
       -n "RDMnetBrokerService"
       -v $env:NEW_BUILD_VERSION
       -a $env:COMPILER_ARCH
