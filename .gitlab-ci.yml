@@ -20,10 +20,12 @@ windows-build:
         CMAKE_INSTALL: install_x86
         VCVARSALL_PLATFORM: x86
         ARTIFACT_TYPE: x86
+        COMPILER_ARCH: msvc2019
       - CMAKE_GENERATOR_OPTIONS: -A x64
         CMAKE_INSTALL: install_x64
         VCVARSALL_PLATFORM: amd64
         ARTIFACT_TYPE: x64
+        COMPILER_ARCH: msvc2019_64
   script:
     - python tools\ci\update_artifact_version.py
     - mkdir build
@@ -40,6 +42,18 @@ windows-build:
     - cp .\build\$env:CMAKE_INSTALL\lib\RDMnetBroker.pdb .\symbols\RDMnetBroker.pdb
     - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\symbols\EtcPal.pdb
     - .\tools\ci\windows_build_artifacts.bat
+    - python C:\tools\ci\publish_symbols.py 
+        -n "RDMnetBrokerService"
+        -v $env:NEW_BUILD_VERSION
+        -a $env:COMPILER_ARCH
+        -u https://artifactory.etcconnect.com:443
+        -r NET
+        --user $env:RDMNETBRKR_ARTIFACTORY_API_USER
+        -k $env:RDMNETBRKR_ARTIFACTORY_API_KEY
+        --os windows
+        -d .\symbols
+        .\build\$env:CMAKE_INSTALL\bin\RDMnetBrokerService.exe
+
   artifacts:
     when: always
     paths:
