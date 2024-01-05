@@ -16,7 +16,7 @@ powershell C:\tools\ci\github-sourceindexer.ps1 -dbgToolsPath "%TEMP%\srcsrv" -g
   -userId "ETCLabs" ^
   -repository "RDMnetBroker" ^
   -branch %PROJECT_HASH% ^
-  -symbolsFolder "%cd%\symbols" ^
+  -symbolsFolder "%cd%\symbols_%ARTIFACT_TYPE%" ^
   -sourcesRoot "%cd%" ^
   -ignoreUnknown -verifyLocalRepo
 
@@ -30,6 +30,6 @@ python C:\tools\ci\Symbols\publish_symbols.py ^
   -r NET ^
   -k %RDMNETBRKR_ARTIFACTORY_API_KEY% ^
   --os windows ^
-  -d .\symbols ^
+  -d .\symbols_%ARTIFACT_TYPE% ^
   --cert .\cacert.pem ^
   .\build\%CMAKE_INSTALL%\bin\RDMnetBrokerService.exe

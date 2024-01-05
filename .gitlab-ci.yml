@@ -36,12 +36,11 @@ windows-build:
     - cmake -DBUILD_TYPE=RelWithDebInfo -P cmake_install.cmake
     - cd ..
     - mkdir symbols
-    - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerService.pdb .\symbols\RDMnetBrokerService.pdb
-    - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerServiceCore.pdb .\symbols\RDMnetBrokerServiceCore.pdb
-    - cp .\build\$env:CMAKE_INSTALL\lib\RDMnet.pdb .\symbols\RDMnet.pdb
-    - cp .\build\$env:CMAKE_INSTALL\lib\RDMnetBroker.pdb .\symbols\RDMnetBroker.pdb
-    - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\symbols\EtcPal.pdb
-    - .\tools\ci\index_and_publish_symbols.bat
+    - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerService.pdb .\symbols_$env:ARTIFACT_TYPE\RDMnetBrokerService.pdb
+    - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerServiceCore.pdb .\symbols_$env:ARTIFACT_TYPE\RDMnetBrokerServiceCore.pdb
+    - cp .\build\$env:CMAKE_INSTALL\lib\RDMnet.pdb .\symbols_$env:ARTIFACT_TYPE\RDMnet.pdb
+    - cp .\build\$env:CMAKE_INSTALL\lib\RDMnetBroker.pdb .\symbols_$env:ARTIFACT_TYPE\RDMnetBroker.pdb
+    - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\symbols_$env:ARTIFACT_TYPE\EtcPal.pdb
     - .\tools\ci\windows_build_artifacts.bat
 
   artifacts:
@@ -49,6 +48,8 @@ windows-build:
     paths:
       - RDMnetBroker_$ARTIFACT_TYPE.msi
       - RDMnetBroker_$ARTIFACT_TYPE.msm
+      - symbols_$ARTIFACT_TYPE/
+      - build/$CMAKE_INSTALL/bin/RDMnetBrokerService.exe
     reports:
       junit: build/tests/test-results/*.xml
 
@@ -103,3 +104,20 @@ artifactory-deploy:
   script:
     - pip install requests
     - python3 tools/ci/deploy_to_artifactory.py ${NEW_BUILD_VERSION}
+
+artifactory-publish-symbols:
+  stage: deploy
+#  rules:
+#    - if: '$CI_PIPELINE_SOURCE == "web" && $NEW_BUILD_VERSION =~ /^\d+\.\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_NAME == "main"'
+  tags:
+    - ct-windows
+  parallel:
+    matrix:
+      - CMAKE_INSTALL: install_x86
+        ARTIFACT_TYPE: x86
+        COMPILER_ARCH: msvc2019
+      - CMAKE_INSTALL: install_x64
+        ARTIFACT_TYPE: x64
+        COMPILER_ARCH: msvc2019_64
+  script:
+    - .\tools\ci\index_and_publish_symbols.bat
