@@ -20,7 +20,7 @@ powershell C:\tools\ci\github-sourceindexer.ps1 -dbgToolsPath "%TEMP%\srcsrv" -g
   -sourcesRoot "%cd%" ^
   -ignoreUnknown -verifyLocalRepo
 
-curl -o %TEMP%\cacert.pem http://etc.gitlab-pages.etcconnect.com/cacert/wildcard-cert-chain.pem
+curl -o %cd%\cacert.pem http://etc.gitlab-pages.etcconnect.com/cacert/wildcard-cert-chain.pem
 
 python C:\tools\ci\Symbols\publish_symbols.py ^
   -n "RDMnetBrokerService" ^
@@ -31,5 +31,5 @@ python C:\tools\ci\Symbols\publish_symbols.py ^
   -k %RDMNETBRKR_ARTIFACTORY_API_KEY% ^
   --os windows ^
   -d .\symbols ^
-  --cert %TEMP%\cacert.pem
+  --cert %cd%\cacert.pem
   .\build\%CMAKE_INSTALL%\bin\RDMnetBrokerService.exe
