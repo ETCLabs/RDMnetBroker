@@ -24,7 +24,7 @@ python C:\tools\ci\Symbols\publish_symbols.py ^
   -n "RDMnetBrokerService" ^
   -v %NEW_BUILD_VERSION% ^
   -a %COMPILER_ARCH% ^
-  -u https://artifactory.etcconnect.com:443 ^
+  -u %ETC_COMMON_TECH_ARTIFACTORY_URL% ^
   -r NET ^
   -k %RDMNETBRKR_ARTIFACTORY_API_KEY% ^
   --os windows ^
