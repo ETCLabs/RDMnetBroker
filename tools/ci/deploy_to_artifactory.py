@@ -7,8 +7,8 @@ import requests
 
 THIS_FILE_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 ARTIFACTORY_API_KEY = os.getenv('RDMNETBRKR_ARTIFACTORY_API_KEY')
-ARTIFACTORY_PROJECT_NAME = 'RDMnetBroker'
-ARTIFACTORY_URL = f'https://artifactory.etcconnect.com:443/artifactory/NET/dev/{ARTIFACTORY_PROJECT_NAME}'
+ARTIFACTORY_PROJECT_NAME = os.getenv('RDMNETBRKR_ARTIFACTORY_PROJECT_NAME')
+ARTIFACTORY_URL = os.getenv('RDMNETBRKR_ARTIFACTORY_URL')
 
 def upload_file(local_name: str, version: str):
     """Uploads the specified staged binary to Artifactory."""
