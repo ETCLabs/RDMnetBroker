@@ -107,8 +107,8 @@ artifactory-deploy:
 
 artifactory-publish-symbols:
   stage: deploy
-#  rules:
-#    - if: '$CI_PIPELINE_SOURCE == "web" && $NEW_BUILD_VERSION =~ /^\d+\.\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_NAME == "main"'
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $NEW_BUILD_VERSION =~ /^\d+\.\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_NAME == "main"'
   tags:
     - ct-windows
   parallel:
