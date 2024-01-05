@@ -27,8 +27,6 @@ windows-build:
         ARTIFACT_TYPE: x64
         COMPILER_ARCH: msvc2019_64
   script:
-    - pip config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
-    - pip config set global.trusted-host artifactory.etcconnect.com
     - python tools\ci\update_artifact_version.py
     - mkdir build
     - cd build
