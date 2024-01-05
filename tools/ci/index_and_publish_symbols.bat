@@ -31,5 +31,5 @@ python C:\tools\ci\Symbols\publish_symbols.py ^
   -k %RDMNETBRKR_ARTIFACTORY_API_KEY% ^
   --os windows ^
   -d .\symbols ^
-  --cert .\cacert.pem
+  --cert .\cacert.pem ^
   .\build\%CMAKE_INSTALL%\bin\RDMnetBrokerService.exe
