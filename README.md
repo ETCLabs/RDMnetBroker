@@ -80,7 +80,7 @@ The broker service configuration file, `broker.conf`, contains a JSON object wit
   "dns_sd": {
     "service_instance_name": "My ETC RDMnet Broker",
     "manufacturer": "ETC",
-    "model": "RDMnet Broker",
+    "model": "RDMnet Broker"
   },
 
   "scope": "default",
@@ -154,7 +154,7 @@ Various DNS-SD settings can be configured. The service instance name, manufactur
   "dns_sd": {
     "service_instance_name": "My ETC RDMnet Broker",
     "manufacturer": "ETC",
-    "model": "RDMnet Broker",
+    "model": "RDMnet Broker"
   }
 ```
 

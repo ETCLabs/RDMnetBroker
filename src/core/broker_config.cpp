@@ -312,7 +312,7 @@ bool ValidateAndStoreLogLevel(const json& val, BrokerConfig& config, etcpal::Log
 //   "dns_sd": {
 //     "service_instance_name": "My ETC RDMnet Broker",
 //     "manufacturer": "ETC",
-//     "model": "RDMnet Broker",
+//     "model": "RDMnet Broker"
 //   },
 //
 //   "scope": "default",
