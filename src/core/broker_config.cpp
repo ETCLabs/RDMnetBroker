@@ -494,6 +494,12 @@ void BrokerConfig::SetDefaults()
 // valid.
 BrokerConfig::ParseResult BrokerConfig::ValidateCurrent(etcpal::Logger* log)
 {
+  if (!current_.is_object())
+  {
+    // Root type must be an object
+    return ParseResult::kJsonParseErr;
+  }
+
   ParseResult res = ParseResult::kOk;
 
   for (const auto& setting : kSettingsValidatorArray)  // kSettingsValidatorArray must be iterated first to last
