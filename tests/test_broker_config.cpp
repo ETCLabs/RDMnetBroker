@@ -149,6 +149,30 @@ TEST_F(TestBrokerConfig, InvalidJsonShouldFailWithoutThrowing)
   }
 }
 
+TEST_F(TestBrokerConfig, InvalidJsonRootTypeShouldFail)
+{
+  // Root types that are not object should generate a parse error. These are types that would be
+  // parsed as valid JSON, but are not valid for the purposes of our config file.
+
+  // clang-format off
+  const std::vector<std::string> kInvalidJsonRootTypes =
+  {
+    "\"foo\"",
+    "42",
+    "[1, 2, 3]",
+    "true",
+    "false",
+    "null",
+  };
+  // clang-format on
+
+  for (const auto& invalid_input : kInvalidJsonRootTypes)
+  {
+    std::istringstream test_stream(invalid_input);
+    EXPECT_EQ(config_.Read(test_stream), BrokerConfig::ParseResult::kJsonParseErr) << "Input tested: " << invalid_input;
+  }
+}
+
 TEST_F(TestBrokerConfig, InvalidCidValueShouldFail)
 {
   // clang-format off
