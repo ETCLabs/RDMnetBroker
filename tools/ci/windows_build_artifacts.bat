@@ -9,6 +9,3 @@ copy tools\install\windows\merge\bin\Release\RDMnetBroker_%ARTIFACT_TYPE%.msm .\
 IF %ERRORLEVEL% NEQ 0 ( EXIT /B %ERRORLEVEL% )
 copy tools\install\windows\standalone\bin\Release\RDMnetBroker_%ARTIFACT_TYPE%.msi .\RDMnetBroker_%ARTIFACT_TYPE%.msi
 IF %ERRORLEVEL% NEQ 0 ( EXIT /B %ERRORLEVEL% )
-
-signtool.exe sign /v /a /tr "http://timestamp.digicert.com" /td sha256 /fd sha256 /f "C:\certs\ETCCert2021DigicertCodeSigningSHA256.pfx" /p %RDMNETBRKR_CODESIGN_CERT_SECRET% RDMnetBroker_%ARTIFACT_TYPE%.msi > NUL
-IF %ERRORLEVEL% NEQ 0 ( EXIT /B %ERRORLEVEL% )
