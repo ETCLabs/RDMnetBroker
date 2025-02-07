@@ -41,6 +41,7 @@ windows-build:
     - ctest -C Release --output-on-failure
     - cmake -DBUILD_TYPE=RelWithDebInfo -P cmake_install.cmake
     - cd ..
+    - rm -rf symbols_$env:ARTIFACT_TYPE/
     - mkdir symbols_$env:ARTIFACT_TYPE
     - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerService.pdb .\symbols_$env:ARTIFACT_TYPE\RDMnetBrokerService.pdb
     - cp .\build\$env:CMAKE_INSTALL\symbols\RDMnetBrokerServiceCore.pdb .\symbols_$env:ARTIFACT_TYPE\RDMnetBrokerServiceCore.pdb
