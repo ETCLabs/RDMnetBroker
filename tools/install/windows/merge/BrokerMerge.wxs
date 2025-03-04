@@ -28,9 +28,9 @@
               <File Id="BrokerExe" Name="RDMnetBrokerService.exe" DiskId="1" KeyPath="yes">
                 <!-- Create Windows Firewall exceptions for the Broker executable. -->
                 <fire:FirewallException Id="RDMnetBrokerTCP" Name="ETC RDMnet Broker (TCP-in)"
-                    Profile="all" Protocol="tcp" Scope="any" IgnoreFailure="no" />
+                    Profile="all" Protocol="tcp" Scope="any" IgnoreFailure="yes" />
                 <fire:FirewallException Id="RDMnetBrokerUDP" Name="ETC RDMnet Broker (UDP-in)"
-                    Profile="all" Protocol="udp" Scope="any" IgnoreFailure="no" />
+                    Profile="all" Protocol="udp" Scope="any" IgnoreFailure="yes" />
               </File>
               <File Id="DnsSdDll" Name="dnssd.dll" DiskId="1" />
 
