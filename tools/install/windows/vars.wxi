@@ -8,7 +8,7 @@ tools/version/templates/vars.wxi.in
 -->
 
 <Include>
-  <?define VersionNumber = "1.0.0.10" ?>
+  <?define VersionNumber = "1.0.0.11" ?>
 
   <?if $(var.Platform) = x64 ?>
     <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
