@@ -48,17 +48,15 @@ windows-build:
     - cp .\build\$env:CMAKE_INSTALL\lib\RDMnet.pdb .\symbols_$env:ARTIFACT_TYPE\RDMnet.pdb
     - cp .\build\$env:CMAKE_INSTALL\lib\RDMnetBroker.pdb .\symbols_$env:ARTIFACT_TYPE\RDMnetBroker.pdb
     - cp .\build\$env:CMAKE_INSTALL\lib\EtcPal.pdb .\symbols_$env:ARTIFACT_TYPE\EtcPal.pdb
-    - .\tools\ci\windows_build_artifacts.bat
-    - echo "Signing Installer"
-    - $Env:ETC_SIGN_CREDS = "${NET_CODESIGN_USER}:${NET_CODESIGN_PASS}"
-    - Start-Process -NoNewWindow -Wait -FilePath "build\_deps\etc_sign-src\etc_sign.bat" -ArgumentList "--initcert"
-    - Start-Process -NoNewWindow -Wait -FilePath "build\_deps\etc_sign-src\etc_sign.bat" -ArgumentList "RDMnetBroker_$env:ARTIFACT_TYPE.msi"
+    - cd tools\ci
+    - .\build_windows_installer.bat
+    - cd ..\..
+    - dir
 
   artifacts:
     when: always
     paths:
-      - RDMnetBroker_$ARTIFACT_TYPE.msi
-      - RDMnetBroker_$ARTIFACT_TYPE.msm
+      - RDMnetBroker_$ARTIFACT_TYPE.exe
       - symbols_$ARTIFACT_TYPE/
       - build/$CMAKE_INSTALL/bin/RDMnetBrokerService.exe
     reports:
@@ -67,7 +65,7 @@ windows-build:
 macos-build:
   stage: build
   tags:
-    - ct-macos
+    - ct-mac-m2
   script:
     - pip3 config set global.index-url https://artifactory.etcconnect.com/artifactory/api/pypi/ETC-PyPI/simple
     - pip3 config set global.trusted-host artifactory.etcconnect.com

@@ -3,7 +3,7 @@
     {
       "name": "RDMnet",
       "gitlabPath": "etc/common-tech/net/rdmnet",
-      "version": "1.0.0.8"
+      "version": "1.0.0.10"
     },
     {
       "name": "nlohmann_json",
@@ -35,7 +35,8 @@
         "tools/version/templates/broker_version_res.h.in": "src/windows/broker_version_res.h",
         "tools/version/templates/broker_version.h.in": "src/core/broker_version.h",
         "tools/version/templates/current_version.txt.in": "tools/version/current_version.txt",
-        "tools/version/templates/vars.wxi.in": "tools/install/windows/vars.wxi"
+        "tools/install/windows/install.nsi.in": "tools/install/windows/install.nsi",
+        "tools/install/windows/uninstall.nsi.in": "tools/install/windows/uninstall.nsi"
       },
       "jira": {
         "project": "RDMNETBRKR"

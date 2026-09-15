@@ -25,7 +25,7 @@
 #include "service_utils.h"
 #include "service_config.h"
 
-auto assert_log_fn = [](const char* msg) { std::cout << msg << "\n"; };
+auto assert_utils_log_fn = [](const char* msg) { std::cout << msg << "\n"; };
 
 /// \brief Get the last system error code as a descriptive string.
 ///
@@ -35,7 +35,7 @@ auto assert_log_fn = [](const char* msg) { std::cout << msg << "\n"; };
 /// \param[in] buf_size Size of the output buffer.
 void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size)
 {
-  if (!BROKER_ASSERT_VERIFY(msg_buf_out, assert_log_fn) || !BROKER_ASSERT_VERIFY(buf_size > 0, assert_log_fn))
+  if (!BROKER_ASSERT_VERIFY(msg_buf_out, assert_utils_log_fn) || !BROKER_ASSERT_VERIFY(buf_size > 0, assert_utils_log_fn))
     return;
 
   GetLastErrorMessage(GetLastError(), msg_buf_out, buf_size);
@@ -50,7 +50,7 @@ void GetLastErrorMessage(wchar_t* msg_buf_out, size_t buf_size)
 /// \param[in] buf_size Size of the output buffer.
 void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size)
 {
-  if (!BROKER_ASSERT_VERIFY(msg_buf_out, assert_log_fn) || !BROKER_ASSERT_VERIFY(buf_size > 0, assert_log_fn))
+  if (!BROKER_ASSERT_VERIFY(msg_buf_out, assert_utils_log_fn) || !BROKER_ASSERT_VERIFY(buf_size > 0, assert_utils_log_fn))
     return;
 
   wchar_t* msg_buf = nullptr;
@@ -58,7 +58,7 @@ void GetLastErrorMessage(DWORD code, wchar_t* msg_buf_out, size_t buf_size)
                 code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
                 (LPWSTR)&msg_buf, 0, nullptr);
 
-  if (!BROKER_ASSERT_VERIFY(msg_buf, assert_log_fn))
+  if (!BROKER_ASSERT_VERIFY(msg_buf, assert_utils_log_fn))
     return;
 
   wcsncpy_s(msg_buf_out, buf_size, msg_buf, _TRUNCATE);

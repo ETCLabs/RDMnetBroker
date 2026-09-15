@@ -5,8 +5,7 @@
 # installation must be part of the MSI table so that it can be reference-counted by dependent
 # products and cannot be removed when products still exist on the system that need it.
 #
-# The service configuration options, which are set here in both service_config.wxi and in
-# service_config.h, are defined below.
+# The service configuration options, which are set here in service_config.h, are defined below.
 
 set(BROKER_SERVICE_NAME "ETC RDMnet Broker")
 set(BROKER_SERVICE_DISPLAY_NAME "ETC RDMnet Broker")
@@ -28,12 +27,6 @@ set(BROKER_SERVICE_WIX_FAILURE_ACTION_1_DELAY 5)
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/service_config.h.in
   ${CMAKE_CURRENT_LIST_DIR}/GeneratedFiles/service_config.h
-)
-configure_file(${CMAKE_CURRENT_LIST_DIR}/service_config.wxi.in
-  ${PROJECT_SOURCE_DIR}/tools/install/windows/merge/GeneratedFiles/service_config.wxi
-)
-configure_file(${PROJECT_SOURCE_DIR}/tools/cmake/mdnsmerge.wxi.in
-  ${PROJECT_SOURCE_DIR}/tools/install/windows/standalone/GeneratedFiles/mdnsmerge.wxi
 )
 
 # The main service executable

@@ -33,10 +33,9 @@ def deploy_binaries(version: str):
         name=f"RDMnet Broker v{version}",
         message=f"Automated release of RDMnet Broker for v{version}",
     )
-    new_release.upload_asset("RDMnetBroker_x86.msi")
-    new_release.upload_asset("RDMnetBroker_x86.msm")
-    new_release.upload_asset("RDMnetBroker_x64.msi")
-    new_release.upload_asset("RDMnetBroker_x64.msm")
+
+    new_release.upload_asset("RDMnetBroker_x86.exe")
+    new_release.upload_asset("RDMnetBroker_x64.exe")
     new_release.upload_asset("RDMnetBroker.pkg")
 
 

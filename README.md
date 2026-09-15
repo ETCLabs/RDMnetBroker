@@ -44,8 +44,7 @@ RDMnet Broker development is using Git for revision control.
 
 Several artifacts are provided with each release to facilitate the installation of the broker service on Mac and Windows, either standalone or as part of your installer:
 
-* Windows MSI installers for both x86 and x64, for standalone installation or execution from another installer.
-* Windows merge modules for both x86 and x64 - use one of these to add the RDMnet broker service to your installer.
+* Windows EXE installers for both x86 and x64, for standalone installation or execution from another installer.
 * Mac PKG installer, which can be used for standalone installation or added to another installer.
 
 ## Installation and Behavior

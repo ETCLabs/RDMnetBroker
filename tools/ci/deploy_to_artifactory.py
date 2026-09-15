@@ -40,10 +40,8 @@ def upload_file(local_name: str, version: str):
 
 def deploy_binaries(version: str):
     """Deploys all staged binaries to Artifactory."""
-    upload_file("RDMnetBroker_x86.msi", version)
-    upload_file("RDMnetBroker_x86.msm", version)
-    upload_file("RDMnetBroker_x64.msi", version)
-    upload_file("RDMnetBroker_x64.msm", version)
+    upload_file("RDMnetBroker_x86.exe", version)
+    upload_file("RDMnetBroker_x64.exe", version)
     upload_file("RDMnetBroker.pkg", version)
 
 

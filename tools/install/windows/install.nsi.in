@@ -1,0 +1,175 @@
+# install.nsi
+#
+# Do not edit install.nsi, edit install.nsi.in
+#
+# Create the Windows installer for RDMnetBroker
+#
+# Usage: "C:\Program Files (x86)\NSIS\makensis.exe" install.nsi
+
+!include "WinVer.nsh"
+!include "WordFunc.nsh"
+!include "Registry.nsh"
+
+# ; MUI 1.67 compatible ------
+!include "MUI.nsh"
+
+# ; MUI Settings
+!define MUI_ABORTWARNING
+!define MUI_ICON "ETCIconDark_NSIS.ico"
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE "license.rtf"
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
+!insertmacro MUI_LANGUAGE "English"
+# MUI end ------
+
+!if "$%ARTIFACT_TYPE%" == "${U+24}%ARTIFACT_TYPE%"
+  !error "Error environment variable ARTIFACT_TYPE not defined"
+!endif
+
+!define PRODUCT_NAME "ETC RDMnet Broker"
+!define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\{9ABA3493-191A-497A-8C9C-D676AD9DDAFD}"
+
+# this value is written when .gitlab-ci.yml runs the command
+# - python tools\ci\update_artifact_version.py
+!define PRODUCT_VERSION "@VERSION@"
+
+# the name of the installer
+Outfile "RDMnetBroker_$%ARTIFACT_TYPE%.exe"
+
+# Show install details
+ShowInstDetails show
+
+# Request application privileges for Windows Vista
+RequestExecutionLevel admin
+
+# define the friendly name displayed in the installer pages
+Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+
+Function .onInit
+  # read the registry for the existing installed version of RDMnet Broker (might be empty string)
+  ReadRegStr $R0 "HKLM" "${UNINSTALL_KEY}" "DisplayVersion"
+  ClearErrors
+  ${If} $R0 != ''
+    # a copy of RDMnet Broker is already installed on this machine
+
+    # run NSIS 'VersionCompare' function
+    ${VersionCompare} $R0 ${PRODUCT_VERSION} $R1
+    
+    # Result:
+    #    $R1=0  Versions are equal
+    #    $R1=1  $R0 (existing) is newer
+    #    $R1=2  $PRODUCT_VERSION (installer) is newer
+    ${If} $R1 != '2'
+      # the installer version is not newer, do not overwrite
+      IfSilent abort_install
+      MessageBox MB_YESNO|MB_USERICON|MB_TOPMOST "A newer version of ETC RDMnet Broker service is already installed. Do you want to downgrade to this version?" IDYES end_check_version IDNO abort_install
+
+abort_install:
+      Abort
+end_check_version:
+    ${EndIf}
+  
+  ${EndIf}
+FunctionEnd
+
+Function InstallVcRedist
+  SetOutPath "$TEMP"
+
+  File "vc_redist.$%ARTIFACT_TYPE%.exe"
+
+  DetailPrint       "$TEMP\vc_redist.$%ARTIFACT_TYPE%.exe /install /passive /norestart"
+  nsExec::Exec /OEM "$TEMP\vc_redist.$%ARTIFACT_TYPE%.exe /install /passive /norestart"
+  Delete "$TEMP\vc_redist.$%ARTIFACT_TYPE%.exe"
+FunctionEnd
+
+Function InstallmDNSWindows
+  SetOutPath "$TEMP"
+
+  File "ETC_mDNSInstall.exe"
+
+  DetailPrint       "$TEMP\ETC_mDNSInstall.exe /S"
+  nsExec::Exec /OEM "$TEMP\ETC_mDNSInstall.exe /S"
+  Delete "$TEMP\ETC_mDNSInstall.exe"
+FunctionEnd
+
+# default section
+Section "Application"
+  # this will affect all users
+  SetShellVarContext all
+
+  # Running the uninstaller using the 'ExecWait' command doesn't work
+  # because ExecWait returns when the command prompt is 're-displayed'
+  # even though the uninstaller itself is still running.
+  #
+  # Instead, run the individual uninstall steps needed to remove the
+  # previous version of RDMnet Broker. (duplicating code from the uninstaller)
+  DetailPrint "Stopping ${PRODUCT_NAME}"
+  DetailPrint "$SYSDIR\sc.exe stop ${PRODUCT_NAME}"
+  ExecWait '$SYSDIR\sc.exe stop "${PRODUCT_NAME}"'
+
+  # Do not delete the RDMnet Broker service
+
+  Delete "$PROGRAMFILES64\ETC\RDMnetBroker\dnssd.dll"
+  Delete "$PROGRAMFILES64\ETC\RDMnetBroker\RDMnetBrokerService.exe"
+  Delete "$PROGRAMFILES64\ETC\RDMnetBroker\ETC_RDMnetBroker_Uninstall.exe"
+  Delete "$PROGRAMFILES64\ETC\RDMnetBroker\license.rtf"
+  Delete "$PROGRAMFILES64\ETC\RDMnetBroker\ETCIconDark_NSIS.ico"
+
+  SetOutPath "$PROGRAMFILES64\ETC\RDMnetBroker"
+
+  # copy dll and service files, and the uninstaller
+  File "dnssd.dll"
+  File "RDMnetBrokerService.exe"
+  File "ETC_RDMnetBroker_Uninstall.exe"
+  File "license.rtf"
+  File "ETCIconDark_NSIS.ico"
+
+  # create 'Config' directory
+  CreateDirectory "$LOCALAPPDATA\ETC\RDMnetBroker\Config"
+
+  IfFileExists "${LOCALAPPDATA}\ETC\RDMnetBroker\Config\broker.conf" broker_conf_exists 0
+    # copy broker.conf and give full access to everyone
+    SetOutPath "$LOCALAPPDATA\ETC\RDMnetBroker\Config"
+    File "broker.conf"
+    DetailPrint "$SYSDIR\icacls.exe $LOCALAPPDATA\ETC\RDMnetBroker\Config\broker.conf /grant Everyone:FMRXWD"
+    nsExec::Exec /OEM '"$SYSDIR\icacls.exe" "$LOCALAPPDATA\ETC\RDMnetBroker\Config\broker.conf" /grant "Everyone:FMRXWD"'
+broker_conf_exists:
+    # do not overwrite existing file
+
+  # create 'Logs' directory
+  CreateDirectory "$LOCALAPPDATA\ETC\RDMnetBroker\Logs"
+
+  # mDNSWindows
+  Call InstallmDNSWindows
+  
+  # VC Redistributables
+  Call InstallVcRedist
+
+  # install RDMnet Broker service
+  DetailPrint "$PROGRAMFILES64\ETC\RDMnetBroker\RDMnetBrokerService.exe -install"
+  ExecWait '"$PROGRAMFILES64\ETC\RDMnetBroker\RDMnetBrokerService.exe" -install'
+
+  # create firewall exceptions
+  DetailPrint "netsh advfirewall firewall add rule name=ETC RDMnet Broker (TCP-in) dir=in action=allow program=$PROGRAMFILES64\ETC\RDMnetBroker\RDMnetBrokerService.exe enable=yes profile=domain,public,private protocol=TCP"
+  ExecWait 'netsh advfirewall firewall add rule name="ETC RDMnet Broker (TCP-in)" dir=in action=allow program="$PROGRAMFILES64\ETC\RDMnetBroker\RDMnetBrokerService.exe" enable=yes profile=domain,public,private protocol=TCP'
+  DetailPrint "netsh advfirewall firewall add rule name=ETC RDMnet Broker (UDP-in) dir=in action=allow program=$PROGRAMFILES64\ETC\RDMnetBroker\RDMnetBrokerService.exe enable=yes profile=domain,public,private protocol=UDP"
+  ExecWait 'netsh advfirewall firewall add rule name="ETC RDMnet Broker (UDP-in)" dir=in action=allow program="$PROGRAMFILES64\ETC\RDMnetBroker\RDMnetBrokerService.exe" enable=yes profile=domain,public,private protocol=UDP'
+
+  !if "$%ARTIFACT_TYPE%" == "x64"  
+    SetRegView 64
+  !endif
+
+  # information for Control Panel "Add / Remove Programs"
+  WriteRegStr "HKLM" "${UNINSTALL_KEY}" "DisplayName" "RDMnet Broker Service"
+  WriteRegStr "HKLM" "${UNINSTALL_KEY}" "InstallLocation" "$PROGRAMFILES64\ETC\RDMnetBroker"
+  WriteRegStr "HKLM" "${UNINSTALL_KEY}" "UninstallString" "$PROGRAMFILES64\ETC\RDMnetBroker\ETC_RDMnetBroker_Uninstall.exe"
+  WriteRegStr "HKLM" "${UNINSTALL_KEY}" "DisplayIcon" "$PROGRAMFILES64\ETC\RDMnetBroker\ETCIconDark_NSIS.ico"
+  WriteRegStr "HKLM" "${UNINSTALL_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
+  WriteRegStr "HKLM" "${UNINSTALL_KEY}" "URLInfoAbout" "http://www.etcconnect.com"
+  WriteRegStr "HKLM" "${UNINSTALL_KEY}" "Publisher" "ETC"
+
+  # start RDMnet Broker service
+  DetailPrint "$SYSDIR\sc.exe start ${PRODUCT_NAME}"
+  ExecWait '$SYSDIR\sc.exe start "${PRODUCT_NAME}"'
+SectionEnd
