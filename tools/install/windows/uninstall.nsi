@@ -29,7 +29,7 @@
 
 !define PRODUCT_NAME "ETC RDMnet Broker"
 !define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\{9ABA3493-191A-497A-8C9C-D676AD9DDAFD}"
-!define PRODUCT_VERSION "1.0.0.0"
+!define PRODUCT_VERSION "1.0.0.12"
 
 # the name of the uninstaller
 Outfile "fake_install.exe"
