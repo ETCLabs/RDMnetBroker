@@ -105,7 +105,7 @@ macos-notarize:
 # Deploy versioned build
 include:
   - project: 'etc/common-tech/tools/gitlab-ci-util'
-    ref: v2.1.1
+    ref: v2.4.1
     file: '/ci-yml/deploy-versioned-build.yml'
 
 github-deploy:
